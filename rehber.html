@@ -43,6 +43,7 @@ header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;al
 .meaning{font-size:17px;color:#aaa;max-width:420px;line-height:1.5}
 .example{font-size:14px;color:var(--muted);font-style:italic;max-width:440px;line-height:1.7;border-left:2px solid var(--border);padding-left:14px;text-align:left}
 .example-tr{font-size:12px;color:#555;font-style:normal;margin-top:4px}
+.meaning.blurred{filter:blur(6px);cursor:pointer;transition:filter 0.3s}
 .score-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:monospace;padding:4px 10px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
 .word-actions{display:flex;align-items:center;gap:10px}
 .sound-btn{background:none;border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
@@ -287,7 +288,7 @@ function showNewWord() {
       <button class="sound-btn" onclick="speak('${escHtml(w.kelime)}')">🔊</button>
       <button class="dict-btn" onclick="openDictModal()" title="Lüğət">📖</button>
     </div>
-    <div class="meaning">${escHtml(w.karsiligi)}</div>
+    <div class="meaning blurred" id="meaning" onclick="revealMeaning()">${escHtml(w.karsiligi)}</div>
     ${w.ornek_cumle ? `<div class="example">${escHtml(w.ornek_cumle)}<div class="example-tr" id="exTr">${trCache[w.ornek_cumle]||'tərcümə edilir...'}</div></div>` : ''}
     <div class="score-badge"><span style="color:${gc}">●</span> skor: ${w.puan||0} · ${grup==='Yaxsi'?'yaxşı bilirəm':grup==='Orta'?'orta':'bilmirəm'}</div>
     <div class="qrup-row">
@@ -318,6 +319,11 @@ function showNewWord() {
 }
 
 window.nextWord = function() { sessionCount++; showStats(); showNewWord(); };
+
+window.revealMeaning = function() {
+  const el = document.getElementById('meaning');
+  if (el) el.classList.remove('blurred');
+};
 
 window.saveQrup = async function() {
   const sel = document.getElementById('qrupSelect');
