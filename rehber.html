@@ -6,13 +6,20 @@
 <title>Söz Öyrən</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 :root{
   --bg:#0f0f0f;--card:#181818;--border:#2a2a2a;--text:#f0ede6;--muted:#666;
   --green:#3ddc84;--red:#ff4d4d;--orange:#ffaa00;--blue:#4da6ff;
-  --card2:#1e1e1e;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* Şifrə ekranı */
+#lockScreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999}
+#lockScreen h2{font-family:'Fraunces',serif;font-size:24px}
+#lockScreen input{background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-size:18px;letter-spacing:4px;text-align:center;width:160px;outline:none}
+#lockScreen button{background:var(--green);color:#000;border:none;padding:10px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+#lockScreen .err{color:var(--red);font-size:13px;height:16px}
+
 header{padding:1.2rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .logo{font-family:'Fraunces',serif;font-size:20px;font-weight:600;letter-spacing:-0.5px}
 .filters{display:flex;gap:8px;flex-wrap:wrap}
@@ -40,6 +47,14 @@ header{padding:1.2rem 2rem;border-bottom:1px solid var(--border);display:flex;al
 .next-btn:hover{background:#333;color:var(--text)}
 .sound-btn{background:none;border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
 .sound-btn:hover{border-color:#555;color:var(--text)}
+
+/* Qrup seçici */
+.qrup-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.qrup-select{background:#1a1a1a;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none}
+.qrup-select:focus{border-color:#555}
+.qrup-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.qrup-btn:hover{border-color:#555;color:var(--text)}
+
 .right{background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
 .dict-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);font-family:monospace;display:flex;align-items:center;gap:6px}
 .dict-content{padding:1.2rem;flex:1;font-size:13px;line-height:1.8;color:#ccc}
@@ -61,6 +76,14 @@ header{padding:1.2rem 2rem;border-bottom:1px solid var(--border);display:flex;al
 </style>
 </head>
 <body>
+
+<!-- Şifrə ekranı -->
+<div id="lockScreen">
+  <h2>🔒 söz öyrən</h2>
+  <input type="password" id="passInput" placeholder="······" maxlength="10" onkeydown="if(event.key==='Enter')checkPass()">
+  <button onclick="checkPass()">Daxil ol</button>
+  <div class="err" id="passErr"></div>
+</div>
 
 <header>
   <div class="logo">söz öyrən</div>
@@ -93,79 +116,130 @@ header{padding:1.2rem 2rem;border-bottom:1px solid var(--border);display:flex;al
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const firebaseConfig = {
+// ── Şifrə ────────────────────────────────────────────────
+const PASS = '654881';
+function checkPass() {
+  const val = document.getElementById('passInput').value;
+  if (val === PASS) {
+    localStorage.setItem('soz_auth', PASS);
+    document.getElementById('lockScreen').style.display = 'none';
+    init();
+  } else {
+    document.getElementById('passErr').textContent = 'Şifrə səhvdir';
+    document.getElementById('passInput').value = '';
+  }
+}
+window.checkPass = checkPass;
+
+if (localStorage.getItem('soz_auth') === PASS) {
+  document.getElementById('lockScreen').style.display = 'none';
+  // init() Firebase yüklənəndən sonra çağırılır
+}
+
+// ── Firebase ─────────────────────────────────────────────
+const app = initializeApp({
   apiKey: "AIzaSyCo8L-ziEftkkDz8tDm0X0nKdUME4bKQNM",
   authDomain: "sozler-fc7c0.firebaseapp.com",
   projectId: "sozler-fc7c0",
   storageBucket: "sozler-fc7c0.firebasestorage.app",
   messagingSenderId: "234991221431",
   appId: "1:234991221431:web:da04cfca423a00704cab32"
-};
-
-const app = initializeApp(firebaseConfig);
+});
 const db = getFirestore(app);
 
-let allWords = [];
-let filteredWords = [];
-let currentWord = null;
-let currentFilter = 'all';
+// ── State ─────────────────────────────────────────────────
+let allWords = [], filteredWords = [], currentWord = null, currentFilter = 'all';
+let sessionCount = 0; // bu sessiyadakı keçilən sayı
+let allGroups = []; // bütün mövcud qruplar
+const trCache = {}; // tərcümə keşi: {cümle: "tərcümə"}
+const prefetchQueue = []; // növbəti sözlər
 
-const ORTA_UST = 5;
-const BILMIREM = 2;
+const ORTA_UST = 5, BILMIREM = 2;
+function paunGrup(p){ return p < BILMIREM ? 'Bilmirem' : p < ORTA_UST ? 'Orta' : 'Yaxsi' }
 
-function paunGrup(p) {
-  if (p < BILMIREM) return 'Bilmirem';
-  if (p < ORTA_UST) return 'Orta';
-  return 'Yaxsi';
-}
-
-async function loadWords() {
+// ── Init ──────────────────────────────────────────────────
+async function init() {
   const snap = await getDocs(collection(db, 'sozler'));
   allWords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Mövcud qrupları topla
+  const grupSet = new Set();
+  allWords.forEach(w => { if (w.qrup && w.qrup !== 'Default') grupSet.add(w.qrup); });
+  allGroups = [...grupSet].sort();
+
   applyFilter();
   showStats();
 }
 
 function applyFilter() {
-  if (currentFilter === 'all') {
-    filteredWords = [...allWords];
-  } else {
-    filteredWords = allWords.filter(w => paunGrup(w.puan || 0) === currentFilter);
-  }
+  filteredWords = currentFilter === 'all' ? [...allWords]
+    : allWords.filter(w => paunGrup(w.puan || 0) === currentFilter);
   showNewWord();
 }
 
 function showStats() {
   const total = allWords.length;
   const yaxsi = allWords.filter(w => paunGrup(w.puan||0) === 'Yaxsi').length;
-  const orta = allWords.filter(w => paunGrup(w.puan||0) === 'Orta').length;
-  const bilmirem = allWords.filter(w => paunGrup(w.puan||0) === 'Bilmirem').length;
+  const orta  = allWords.filter(w => paunGrup(w.puan||0) === 'Orta').length;
+  const bilmi = allWords.filter(w => paunGrup(w.puan||0) === 'Bilmirem').length;
   document.getElementById('statsBar').textContent =
-    `cəmi ${total} · bilmirəm ${bilmirem} · orta ${orta} · yaxşı ${yaxsi}`;
+    `keçildi: ${sessionCount} · cəmi ${total} · bilmirəm ${bilmi} · orta ${orta} · yaxşı ${yaxsi}`;
 }
 
-function getWeightedWord() {
-  if (!filteredWords.length) return null;
-  const weights = filteredWords.map(w => Math.max(1, 10 - (w.puan || 0)));
+function getWeightedWord(exclude) {
+  const pool = filteredWords.filter(w => !exclude || w.id !== exclude);
+  if (!pool.length) return filteredWords[0] || null;
+  const weights = pool.map(w => Math.max(1, 10 - (w.puan || 0)));
   const total = weights.reduce((a,b) => a+b, 0);
   let r = Math.random() * total;
-  for (let i = 0; i < filteredWords.length; i++) {
+  for (let i = 0; i < pool.length; i++) {
     r -= weights[i];
-    if (r <= 0) return filteredWords[i];
+    if (r <= 0) return pool[i];
   }
-  return filteredWords[0];
+  return pool[0];
 }
 
+// ── Önbellek: növbəti 3 sözün tərcüməsini öncədən çək ────
+function prefetchNext() {
+  const next3 = [];
+  let ex = currentWord?.id;
+  for (let i = 0; i < 3; i++) {
+    const w = getWeightedWord(ex);
+    if (w && w.ornek_cumle && !trCache[w.ornek_cumle]) {
+      next3.push(w.ornek_cumle);
+    }
+    ex = w?.id;
+  }
+  next3.forEach(text => {
+    fetchTranslation(text).then(tr => { if (tr) trCache[text] = tr; });
+  });
+}
+
+async function fetchTranslation(text) {
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|az`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.responseStatus === 200) return data.responseData.translatedText;
+  } catch(e) {}
+  return null;
+}
+
+// ── Söz göstər ────────────────────────────────────────────
 function showNewWord() {
-  const w = getWeightedWord();
+  const w = getWeightedWord(null);
   if (!w) {
-    document.getElementById('wordSection').innerHTML =
-      '<div class="empty-state">Bu filtrdə söz yoxdur</div>';
+    document.getElementById('wordSection').innerHTML = '<div class="empty-state">Bu filtrdə söz yoxdur</div>';
     return;
   }
   currentWord = w;
   const grup = paunGrup(w.puan || 0);
   const grupColor = grup === 'Yaxsi' ? 'var(--green)' : grup === 'Orta' ? 'var(--orange)' : 'var(--red)';
+
+  // Qrup seçici HTML
+  const grupOptions = allGroups.map(g =>
+    `<option value="${escHtml(g)}" ${w.qrup===g?'selected':''}>${escHtml(g)}</option>`
+  ).join('');
 
   document.getElementById('wordSection').innerHTML = `
     <div style="display:flex;align-items:center;gap:10px">
@@ -176,39 +250,63 @@ function showNewWord() {
     ${w.ornek_cumle ? `
       <div class="example">
         ${escHtml(w.ornek_cumle)}
-        <div class="example-tr" id="exTr">tərcümə edilir...</div>
+        <div class="example-tr" id="exTr">${trCache[w.ornek_cumle] || 'tərcümə edilir...'}</div>
       </div>` : ''}
     <div class="score-badge">
       <span style="color:${grupColor}">●</span>
       skor: ${w.puan || 0} · ${grup === 'Yaxsi' ? 'yaxşı bilirəm' : grup === 'Orta' ? 'orta' : 'bilmirəm'}
+    </div>
+    <div class="qrup-row">
+      <select class="qrup-select" id="qrupSelect">
+        <option value="">— qrup seç —</option>
+        ${grupOptions}
+      </select>
+      <button class="qrup-btn" onclick="saveQrup()">Qrupa əlavə et</button>
     </div>
     <div class="btns">
       <button class="btn btn-green" onclick="answer(1)">◄ Bilirəm</button>
       <button class="btn btn-orange" onclick="answer(-0.5)">Orta</button>
       <button class="btn btn-red" onclick="answer(-1)">Bilmirəm ►</button>
     </div>
-    <button class="next-btn" onclick="showNewWord()">Keç →</button>
+    <button class="next-btn" onclick="nextWord()">Keç →</button>
   `;
 
-  if (w.ornek_cumle) translateExample(w.ornek_cumle);
+  // Əgər keşdə yoxdursa, çək
+  if (w.ornek_cumle && !trCache[w.ornek_cumle]) {
+    fetchTranslation(w.ornek_cumle).then(tr => {
+      trCache[w.ornek_cumle] = tr || '';
+      const el = document.getElementById('exTr');
+      if (el) el.textContent = tr || '';
+    });
+  }
+
   loadDict(w.kelime);
   speak(w.kelime);
+  prefetchNext();
 }
 
-async function translateExample(text) {
-  const el = document.getElementById('exTr');
-  if (!el) return;
+function nextWord() {
+  sessionCount++;
+  showStats();
+  showNewWord();
+}
+
+// ── Qrup saxla ────────────────────────────────────────────
+async function saveQrup() {
+  const sel = document.getElementById('qrupSelect');
+  const qrup = sel?.value;
+  if (!qrup || !currentWord) return;
   try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|az`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const tr = data?.responseData?.translatedText;
-    el.textContent = tr && data.responseStatus === 200 ? tr : '';
-  } catch(e) {
-    if (el) el.textContent = '';
-  }
+    await updateDoc(doc(db, 'sozler', currentWord.id), { qrup });
+    currentWord.qrup = qrup;
+    const idx = allWords.findIndex(w => w.id === currentWord.id);
+    if (idx >= 0) allWords[idx].qrup = qrup;
+    showToast(currentWord.kelime + ' → ' + qrup);
+  } catch(e) { showToast('Xəta: ' + e.message); }
 }
+window.saveQrup = saveQrup;
 
+// ── Cavab ─────────────────────────────────────────────────
 async function answer(delta) {
   if (!currentWord) return;
   const oldPuan = currentWord.puan || 0;
@@ -220,23 +318,17 @@ async function answer(delta) {
   let bes_ustunde_mi = currentWord.bes_ustunde_mi || false;
   let yazilmali = currentWord.yazilmali || false;
 
-  if (!bes_ustunde_mi && newPuan >= ORTA_UST) {
-    bes_ustunde_mi = true;
-  }
+  if (!bes_ustunde_mi && newPuan >= ORTA_UST) bes_ustunde_mi = true;
   if (bes_ustunde_mi && newPuan < ORTA_UST) {
-    bes_gecme += 1;
+    bes_gecme++;
     bes_ustunde_mi = false;
     if (bes_gecme >= 3) {
       yazilmali = true;
-      showToast('✍️ ' + currentWord.kelime + ' — yazilmali siyahisina elave edildi');
+      showToast('✍️ ' + currentWord.kelime + ' — yazılmalı siyahısına əlavə edildi');
     }
   }
 
-  currentWord.puan = newPuan;
-  currentWord.bes_gecme = bes_gecme;
-  currentWord.bes_ustunde_mi = bes_ustunde_mi;
-  currentWord.yazilmali = yazilmali;
-
+  Object.assign(currentWord, { puan: newPuan, bes_gecme, bes_ustunde_mi, yazilmali });
   const idx = allWords.findIndex(w => w.id === currentWord.id);
   if (idx >= 0) Object.assign(allWords[idx], currentWord);
 
@@ -244,14 +336,14 @@ async function answer(delta) {
     await updateDoc(doc(db, 'sozler', currentWord.id), { puan: newPuan, bes_gecme, bes_ustunde_mi, yazilmali });
   } catch(e) { console.error(e); }
 
-  if (oldGrup !== newGrup) {
-    const label = newGrup === 'Yaxsi' ? 'yaxsi bilirem' : newGrup === 'Orta' ? 'orta' : 'bilmirem';
-    showToast(currentWord.kelime + ' → ' + label);
-  }
+  if (oldGrup !== newGrup) showToast(currentWord.kelime + ' → ' + newGrup);
+
+  sessionCount++;
   showStats();
   setTimeout(showNewWord, 300);
 }
 
+// ── Dict ──────────────────────────────────────────────────
 async function loadDict(kelime) {
   const el = document.getElementById('dictContent');
   el.innerHTML = '<div class="empty-state loading">axtarılır...</div>';
@@ -259,35 +351,31 @@ async function loadDict(kelime) {
     const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(kelime)}`);
     if (!res.ok) { el.innerHTML = '<div class="empty-state">Tapılmadı</div>'; return; }
     const data = await res.json();
-    let html = '';
     const entry = data[0];
+    let html = '';
     if (entry.phonetic) html += `<div class="phonetic">${entry.phonetic}</div>`;
-    for (const meaning of entry.meanings.slice(0, 4)) {
-      html += `<div class="pos">${meaning.partOfSpeech}</div>`;
-      for (const def of meaning.definitions.slice(0, 3)) {
-        html += `<div class="def">— ${escHtml(def.definition)}</div>`;
-        if (def.example) html += `<div class="ex">"${escHtml(def.example)}"</div>`;
+    for (const m of entry.meanings.slice(0,4)) {
+      html += `<div class="pos">${m.partOfSpeech}</div>`;
+      for (const d of m.definitions.slice(0,3)) {
+        html += `<div class="def">— ${escHtml(d.definition)}</div>`;
+        if (d.example) html += `<div class="ex">"${escHtml(d.example)}"</div>`;
       }
     }
     el.innerHTML = html;
-  } catch(e) {
-    el.innerHTML = '<div class="empty-state">API xətası</div>';
-  }
+  } catch(e) { el.innerHTML = '<div class="empty-state">API xətası</div>'; }
 }
 
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = 0.9;
+  u.lang = 'en-US'; u.rate = 0.9;
   window.speechSynthesis.speak(u);
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
 
@@ -301,12 +389,13 @@ window.setFilter = function(f, btn) {
   btn.classList.add('active');
   applyFilter();
 };
-
 window.answer = answer;
 window.showNewWord = showNewWord;
+window.nextWord = nextWord;
 window.speak = speak;
 
-loadWords();
+// Şifrə artıq keçilibsə birbaşa init
+if (localStorage.getItem('soz_auth') === PASS) init();
 </script>
 </body>
 </html>
