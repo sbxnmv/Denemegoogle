@@ -196,15 +196,38 @@ async function answer(delta) {
   const oldGrup = paunGrup(oldPuan);
   const newGrup = paunGrup(newPuan);
 
+  let bes_gecme = currentWord.bes_gecme || 0;
+  let bes_ustunde_mi = currentWord.bes_ustunde_mi || false;
+  let yazilmali = currentWord.yazilmali || false;
+
+  if (!bes_ustunde_mi && newPuan >= ORTA_UST) {
+    bes_ustunde_mi = true;
+  }
+  if (bes_ustunde_mi && newPuan < ORTA_UST) {
+    bes_gecme += 1;
+    bes_ustunde_mi = false;
+    if (bes_gecme >= 3) {
+      yazilmali = true;
+      showToast('✍️ ' + currentWord.kelime + ' — yazilmali siyahisina elave edildi');
+    }
+  }
+
   currentWord.puan = newPuan;
+  currentWord.bes_gecme = bes_gecme;
+  currentWord.bes_ustunde_mi = bes_ustunde_mi;
+  currentWord.yazilmali = yazilmali;
+
   const idx = allWords.findIndex(w => w.id === currentWord.id);
-  if (idx >= 0) allWords[idx].puan = newPuan;
+  if (idx >= 0) Object.assign(allWords[idx], currentWord);
 
   try {
-    await updateDoc(doc(db, 'sozler', currentWord.id), { puan: newPuan });
+    await updateDoc(doc(db, 'sozler', currentWord.id), { puan: newPuan, bes_gecme, bes_ustunde_mi, yazilmali });
   } catch(e) { console.error(e); }
 
-  if (oldGrup !== newGrup) showToast(`${currentWord.kelime} → ${newGrup}`);
+  if (oldGrup !== newGrup) {
+    const label = newGrup === 'Yaxsi' ? 'yaxsi bilirem' : newGrup === 'Orta' ? 'orta' : 'bilmirem';
+    showToast(currentWord.kelime + ' → ' + label);
+  }
   showStats();
   setTimeout(showNewWord, 300);
 }
