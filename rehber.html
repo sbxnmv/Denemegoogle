@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Söz Öyrən</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--card:#181818;--border:#2a2a2a;--text:#f0ede6;--muted:#666;
+  --green:#3ddc84;--red:#ff4d4d;--orange:#ffaa00;--blue:#4da6ff;
+  --card2:#1e1e1e;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+header{padding:1.2rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.logo{font-family:'Fraunces',serif;font-size:20px;font-weight:600;letter-spacing:-0.5px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 13px;border-radius:99px;font-size:12px;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.filter-btn:hover{border-color:#555;color:var(--text)}
+.filter-btn.active{border-color:var(--text);color:var(--text);background:#222}
+.stats-bar{font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap}
+.main{flex:1;display:grid;grid-template-columns:1fr 340px;gap:0;overflow:hidden}
+.left{padding:3rem 2.5rem;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow-y:auto}
+.word-section{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1.2rem;min-height:300px}
+.word-display{font-family:'Fraunces',serif;font-size:52px;font-weight:600;letter-spacing:-1px;line-height:1;cursor:pointer;transition:color 0.2s}
+.word-display:hover{color:var(--blue)}
+.meaning{font-size:17px;color:#aaa;font-weight:400;max-width:420px;line-height:1.5}
+.example{font-size:14px;color:var(--muted);font-style:italic;max-width:440px;line-height:1.7;border-left:2px solid var(--border);padding-left:14px;text-align:left}
+.score-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:monospace;padding:4px 10px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+.btns{display:flex;gap:12px;margin-top:1rem}
+.btn{padding:12px 28px;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;letter-spacing:0.2px}
+.btn:hover{transform:translateY(-1px);opacity:0.9}
+.btn:active{transform:scale(0.97)}
+.btn-green{background:var(--green);color:#000}
+.btn-orange{background:var(--orange);color:#000}
+.btn-red{background:var(--red);color:#fff}
+.next-btn{background:var(--border);color:var(--muted);padding:8px 20px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.5rem;transition:all 0.15s}
+.next-btn:hover{background:#333;color:var(--text)}
+.sound-btn{background:none;border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.sound-btn:hover{border-color:#555;color:var(--text)}
+.right{background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
+.dict-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);font-family:monospace;display:flex;align-items:center;gap:6px}
+.dict-content{padding:1.2rem;flex:1;font-size:13px;line-height:1.8;color:#ccc}
+.dict-content .pos{font-size:11px;color:var(--blue);font-family:monospace;text-transform:uppercase;letter-spacing:1px;margin:1rem 0 4px}
+.dict-content .def{color:#ddd;margin-bottom:4px}
+.dict-content .ex{color:var(--muted);font-style:italic;font-size:12px;padding-left:10px;border-left:1px solid var(--border)}
+.dict-content .phonetic{color:var(--orange);font-size:12px;font-family:monospace;margin-bottom:8px}
+.empty-state{color:var(--muted);font-size:13px;padding:2rem;text-align:center}
+.loading{animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#222;border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:99}
+.toast.show{opacity:1}
+@media(max-width:700px){
+  .main{grid-template-columns:1fr}
+  .right{display:none}
+  .left{padding:2rem 1.2rem}
+  .word-display{font-size:38px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">söz öyrən</div>
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">Hamısı</button>
+    <button class="filter-btn" data-filter="Bilmirem" onclick="setFilter('Bilmirem',this)">Bilmirəm</button>
+    <button class="filter-btn" data-filter="Orta" onclick="setFilter('Orta',this)">Orta</button>
+    <button class="filter-btn" data-filter="Yaxsi" onclick="setFilter('Yaxsi',this)">Yaxşı bilirəm</button>
+  </div>
+  <div class="stats-bar" id="statsBar">yüklənir...</div>
+</header>
+
+<div class="main">
+  <div class="left">
+    <div class="word-section" id="wordSection">
+      <div class="empty-state loading">Firebase-dən yüklənir...</div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="dict-header">📖 free dictionary api</div>
+    <div class="dict-content" id="dictContent">
+      <div class="empty-state">Söz seçin</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCo8L-ziEftkkDz8tDm0X0nKdUME4bKQNM",
+  authDomain: "sozler-fc7c0.firebaseapp.com",
+  projectId: "sozler-fc7c0",
+  storageBucket: "sozler-fc7c0.firebasestorage.app",
+  messagingSenderId: "234991221431",
+  appId: "1:234991221431:web:da04cfca423a00704cab32"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let allWords = [];
+let filteredWords = [];
+let currentWord = null;
+let currentFilter = 'all';
+
+const ORTA_UST = 5;
+const BILMIREM = 2;
+
+function paunGrup(p) {
+  if (p < BILMIREM) return 'Bilmirem';
+  if (p < ORTA_UST) return 'Orta';
+  return 'Yaxsi';
+}
+
+async function loadWords() {
+  const snap = await getDocs(collection(db, 'sozler'));
+  allWords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  applyFilter();
+  showStats();
+}
+
+function applyFilter() {
+  if (currentFilter === 'all') {
+    filteredWords = [...allWords];
+  } else {
+    filteredWords = allWords.filter(w => paunGrup(w.puan || 0) === currentFilter);
+  }
+  showNewWord();
+}
+
+function showStats() {
+  const total = allWords.length;
+  const yaxsi = allWords.filter(w => paunGrup(w.puan||0) === 'Yaxsi').length;
+  const orta = allWords.filter(w => paunGrup(w.puan||0) === 'Orta').length;
+  const bilmirem = allWords.filter(w => paunGrup(w.puan||0) === 'Bilmirem').length;
+  document.getElementById('statsBar').textContent =
+    `cəmi ${total} · bilmirəm ${bilmirem} · orta ${orta} · yaxşı ${yaxsi}`;
+}
+
+function getWeightedWord() {
+  if (!filteredWords.length) return null;
+  const weights = filteredWords.map(w => Math.max(1, 10 - (w.puan || 0)));
+  const total = weights.reduce((a,b) => a+b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < filteredWords.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return filteredWords[i];
+  }
+  return filteredWords[0];
+}
+
+function showNewWord() {
+  const w = getWeightedWord();
+  if (!w) {
+    document.getElementById('wordSection').innerHTML =
+      '<div class="empty-state">Bu filtrdə söz yoxdur</div>';
+    return;
+  }
+  currentWord = w;
+  const grup = paunGrup(w.puan || 0);
+  const grupColor = grup === 'Yaxsi' ? 'var(--green)' : grup === 'Orta' ? 'var(--orange)' : 'var(--red)';
+
+  document.getElementById('wordSection').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="word-display" onclick="speak('${escHtml(w.kelime)}')">${escHtml(w.kelime)}</div>
+      <button class="sound-btn" onclick="speak('${escHtml(w.kelime)}')">🔊</button>
+    </div>
+    <div class="meaning">${escHtml(w.karsiligi)}</div>
+    ${w.ornek_cumle ? `<div class="example">${escHtml(w.ornek_cumle)}</div>` : ''}
+    <div class="score-badge">
+      <span style="color:${grupColor}">●</span>
+      skor: ${w.puan || 0} · ${grup === 'Yaxsi' ? 'yaxşı bilirəm' : grup === 'Orta' ? 'orta' : 'bilmirəm'}
+    </div>
+    <div class="btns">
+      <button class="btn btn-green" onclick="answer(1)">◄ Bilirəm</button>
+      <button class="btn btn-orange" onclick="answer(-0.5)">Orta</button>
+      <button class="btn btn-red" onclick="answer(-1)">Bilmirəm ►</button>
+    </div>
+    <button class="next-btn" onclick="showNewWord()">Keç →</button>
+  `;
+
+  loadDict(w.kelime);
+  speak(w.kelime);
+}
+
+async function answer(delta) {
+  if (!currentWord) return;
+  const oldPuan = currentWord.puan || 0;
+  const newPuan = oldPuan + delta;
+  const oldGrup = paunGrup(oldPuan);
+  const newGrup = paunGrup(newPuan);
+
+  let bes_gecme = currentWord.bes_gecme || 0;
+  let bes_ustunde_mi = currentWord.bes_ustunde_mi || false;
+  let yazilmali = currentWord.yazilmali || false;
+
+  if (!bes_ustunde_mi && newPuan >= ORTA_UST) {
+    bes_ustunde_mi = true;
+  }
+  if (bes_ustunde_mi && newPuan < ORTA_UST) {
+    bes_gecme += 1;
+    bes_ustunde_mi = false;
+    if (bes_gecme >= 3) {
+      yazilmali = true;
+      showToast('✍️ ' + currentWord.kelime + ' — yazilmali siyahisina elave edildi');
+    }
+  }
+
+  currentWord.puan = newPuan;
+  currentWord.bes_gecme = bes_gecme;
+  currentWord.bes_ustunde_mi = bes_ustunde_mi;
+  currentWord.yazilmali = yazilmali;
+
+  const idx = allWords.findIndex(w => w.id === currentWord.id);
+  if (idx >= 0) Object.assign(allWords[idx], currentWord);
+
+  try {
+    await updateDoc(doc(db, 'sozler', currentWord.id), { puan: newPuan, bes_gecme, bes_ustunde_mi, yazilmali });
+  } catch(e) { console.error(e); }
+
+  if (oldGrup !== newGrup) {
+    const label = newGrup === 'Yaxsi' ? 'yaxsi bilirem' : newGrup === 'Orta' ? 'orta' : 'bilmirem';
+    showToast(currentWord.kelime + ' → ' + label);
+  }
+  showStats();
+  setTimeout(showNewWord, 300);
+}
+
+async function loadDict(kelime) {
+  const el = document.getElementById('dictContent');
+  el.innerHTML = '<div class="empty-state loading">axtarılır...</div>';
+  try {
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(kelime)}`);
+    if (!res.ok) { el.innerHTML = '<div class="empty-state">Tapılmadı</div>'; return; }
+    const data = await res.json();
+    let html = '';
+    const entry = data[0];
+    if (entry.phonetic) html += `<div class="phonetic">${entry.phonetic}</div>`;
+    for (const meaning of entry.meanings.slice(0, 4)) {
+      html += `<div class="pos">${meaning.partOfSpeech}</div>`;
+      for (const def of meaning.definitions.slice(0, 3)) {
+        html += `<div class="def">— ${escHtml(def.definition)}</div>`;
+        if (def.example) html += `<div class="ex">"${escHtml(def.example)}"</div>`;
+      }
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">API xətası</div>';
+  }
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+window.setFilter = function(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+};
+
+window.answer = answer;
+window.showNewWord = showNewWord;
+window.speak = speak;
+
+loadWords();
+</script>
+</body>
+</html>
