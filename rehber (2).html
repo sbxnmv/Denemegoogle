@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rehber</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #f5f4f0; --card: #ffffff; --accent: #1a1a1a; --muted: #888; --border: #e0ddd6; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 2rem; }
+  .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 1.5rem; }
+  .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  input { flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--accent); outline: none; transition: border-color 0.15s; }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .status { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); min-height: 18px; margin-top: 4px; }
+  .status.ok { color: #2d6a4f; }
+  .status.err { color: #c0392b; }
+  .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .list-title { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'DM Mono', monospace; }
+  .refresh-btn { background: none; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+  .contact-list { display: flex; flex-direction: column; gap: 8px; }
+  .contact { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .contact-name { font-size: 14px; font-weight: 500; }
+  .contact-phone { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 2rem; font-family: 'DM Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Rehber</h1>
+  <p class="subtitle">firebase firestore → canlı sinxronizasiya</p>
+
+  <div class="form-card">
+    <div class="form-row">
+      <input id="adInput" type="text" placeholder="Ad Soyad" />
+      <input id="telInput" type="tel" placeholder="Telefon" />
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button id="saveBtn" onclick="save()">Əlavə et</button>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <div class="list-header">
+    <span class="list-title">Kontaktlar</span>
+    <button class="refresh-btn" onclick="load()">↻ Yenilə</button>
+  </div>
+  <div class="contact-list" id="list">
+    <div class="empty">Yüklənir...</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCo8L-ziEftkkDz8tDm0X0nKdUME4bKQNM",
+  authDomain: "sozler-fc7c0.firebaseapp.com",
+  projectId: "sozler-fc7c0",
+  storageBucket: "sozler-fc7c0.firebasestorage.app",
+  messagingSenderId: "234991221431",
+  appId: "1:234991221431:web:da04cfca423a00704cab32"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+function initials(name) {
+  return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+async function load() {
+  const list = document.getElementById('list');
+  list.innerHTML = '<div class="empty">Yüklənir...</div>';
+  try {
+    const q = query(collection(db, 'kontaktlar'), orderBy('ad'));
+    const snap = await getDocs(q);
+    if (snap.empty) { list.innerHTML = '<div class="empty">Heç bir kontakt yoxdur</div>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const {ad, telefon} = d.data();
+      return `<div class="contact">
+        <div class="avatar">${initials(ad || '?')}</div>
+        <div>
+          <div class="contact-name">${ad}</div>
+          <div class="contact-phone">${telefon || '—'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty">Xəta: ' + e.message + '</div>';
+  }
+}
+
+async function save() {
+  const ad = document.getElementById('adInput').value.trim();
+  const telefon = document.getElementById('telInput').value.trim();
+  const status = document.getElementById('status');
+  const btn = document.getElementById('saveBtn');
+  if (!ad) { status.textContent = 'Ad daxil edin'; status.className = 'status err'; return; }
+  btn.disabled = true;
+  status.textContent = 'Göndərilir...';
+  status.className = 'status';
+  try {
+    await addDoc(collection(db, 'kontaktlar'), { ad, telefon });
+    document.getElementById('adInput').value = '';
+    document.getElementById('telInput').value = '';
+    status.textContent = '✓ Əlavə edildi';
+    status.className = 'status ok';
+    await load();
+  } catch(e) {
+    status.textContent = '✗ ' + e.message;
+    status.className = 'status err';
+  }
+  btn.disabled = false;
+}
+
+window.save = save;
+window.load = load;
+load();
+</script>
+</body>
+</html>
