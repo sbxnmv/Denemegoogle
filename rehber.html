@@ -180,6 +180,31 @@ const trCache = {};
 const ORTA_UST = 5, BILMIREM = 2;
 function paunGrup(p){ return p < BILMIREM ? 'Bilmirem' : p < ORTA_UST ? 'Orta' : 'Yaxsi' }
 
+// ── Bilmirem qrupunun ölçüsünə görə seçim üstünlüyü (dinamik ağırlıq) ────────
+// "Bilmirem" qrupundakı söz sayı azaldıqca, o qrupa (və Orta-ya) daha çox
+// üstünlük verilir ki, irəliləyiş hiss olunsun. Seçim tam olaraq o qrupa
+// kilidlənmir — sadəcə çəkilər (weights) artırılır, seçim yenə orantılı
+// (weighted random) aparılır.
+const BILMIREM_ESIK_ORTA   = 250;  // bu sayın altına düşəndə ilk üstünlük başlayır
+const BILMIREM_ESIK_YUKSEK = 150;  // bu sayın altına düşəndə üstünlük daha da artır
+
+const GROUP_CARPANLARI = {
+  yuksek: { Bilmirem: 1.0, Orta: 1.0, Yaxsi: 1.0 },   // > 250 — normal davranış
+  orta:   { Bilmirem: 1.8, Orta: 1.0, Yaxsi: 0.5 },   // 151-250 — bilmirem-ə bir az üstünlük
+  az:     { Bilmirem: 3.0, Orta: 1.5, Yaxsi: 0.3 },   // <= 150 — bilmirem+orta-ya daha çox üstünlük
+};
+
+function bilmiremSayi() {
+  return allWords.filter(w => paunGrup(w.puan || 0) === 'Bilmirem').length;
+}
+
+function grupCarpanlari() {
+  const sayi = bilmiremSayi();
+  if (sayi <= BILMIREM_ESIK_YUKSEK) return GROUP_CARPANLARI.az;
+  if (sayi <= BILMIREM_ESIK_ORTA)   return GROUP_CARPANLARI.orta;
+  return GROUP_CARPANLARI.yuksek;
+}
+
 async function init() {
   const snap = await getDocs(collection(db, 'sozler'));
   allWords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -242,7 +267,12 @@ function showStats() {
 
 function getWeightedWord() {
   if (!filteredWords.length) return null;
-  const weights = filteredWords.map(w => Math.max(1, 10 - (w.puan || 0)));
+  const carpanlar = grupCarpanlari();
+  const weights = filteredWords.map(w => {
+    const baz  = Math.max(1, 10 - (w.puan || 0));
+    const grup = paunGrup(w.puan || 0);
+    return baz * (carpanlar[grup] || 1.0);
+  });
   const total = weights.reduce((a,b)=>a+b,0);
   let r = Math.random() * total;
   for (let i = 0; i < filteredWords.length; i++) { r -= weights[i]; if (r <= 0) return filteredWords[i]; }
@@ -345,11 +375,19 @@ async function answer(delta) {
   const oldGrup = paunGrup(oldPuan);
   const newGrup = paunGrup(newPuan);
   let {bes_gecme=0, bes_ustunde_mi=false, yazilmali=false} = currentWord;
+  const yazilmaliOnceki = yazilmali;
 
   if (!bes_ustunde_mi && newPuan >= ORTA_UST) bes_ustunde_mi = true;
   if (bes_ustunde_mi && newPuan < ORTA_UST) {
     bes_gecme++; bes_ustunde_mi = false;
-    if (bes_gecme >= 3) { yazilmali = true; showToast('✍️ ' + currentWord.kelime + ' — yazılmalı siyahısına əlavə edildi'); }
+    if (bes_gecme >= 3) yazilmali = true;
+  }
+
+  // Skor -7-yə (və ya aşağıya) düşəndə söz avtomatik "yazılmalı" siyahısına düşür
+  if (newPuan <= -7) yazilmali = true;
+
+  if (yazilmali && !yazilmaliOnceki) {
+    showToast('✍️ ' + currentWord.kelime + ' — yazılmalı siyahısına əlavə edildi');
   }
 
   Object.assign(currentWord, {puan:newPuan, bes_gecme, bes_ustunde_mi, yazilmali});
