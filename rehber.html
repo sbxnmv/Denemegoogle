@@ -86,7 +86,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebas
 import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 const PASS='654881', ORTA_UST=5, BILMIREM_ESK=2;
-const GKEY_DEFAULT='AQ.Ab8RN6KMW0N5f-tn9fSWXO_l6rUQjjRa8IvRd9ujQaIW8YQn2A';
+const GKEY_DEFAULT='AQ.Ab8RN6L5NmMrENTzqnuvcY4PsFZDjyIqrBIRyFxAvaVFSiI9Gg', GKEY_OLD='AQ.Ab8RN6KMW0N5f-tn9fSWXO_l6rUQjjRa8IvRd9ujQaIW8YQn2A';
 const ESIK_ORTA=250, ESIK_YUKSEK=150;
 const CARPAN={yuksek:[1,1,1],orta:[1.8,1,.5],az:[3,1.5,.3]};
 const LANGS={en:{col:'sozler',tts:'en-US',ad:'İngilizce'},de:{col:'sozler_de',tts:'de-DE',ad:'Almanca'}};
@@ -502,13 +502,13 @@ function openKey(){
 function saveKey(){st('gkey',$('#gk').value.trim());st('gmodel',$('#gm').value.trim()||'gemini-3.5-flash-lite');closeModal();toast('Kaydedildi')}
 
 async function gem(prompt,max){
-  const key=ls('gkey','')||GKEY_DEFAULT;
+  const sk=ls('gkey',''), key=(sk&&sk!==GKEY_OLD)?sk:GKEY_DEFAULT;
   if(!key)throw new Error('Önce ⚙️ Ayarlar → 🔑 bölümüne Gemini anahtarını gir.');
   const m=ls('gmodel','');
   const model=(!m||m==='gemini-2.5-flash-lite')?'gemini-3.5-flash-lite':m;
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
+    body:JSON.stringify({systemInstruction:{parts:[{text:'Sen bir dil öğretmenisin. Cevabın TAMAMI Türkçe olmalı (sadece Almanca/İngilizce kelime ve örnekler orijinal dilde kalır). Never answer in English. Düz metin yaz, markdown kullanma.'}]},contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
   const j=await r.json();
   if(!r.ok)throw new Error(j.error?.message||r.status);
   const t=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
@@ -535,7 +535,7 @@ async function fixTr(){
   w.karsiligi=S.fix;
   const m=$('#mean'); if(m)m.textContent=w.karsiligi;
   try{await updateDoc(doc(db,LANGS[S.lang].col,w.id),{karsiligi:w.karsiligi});toast('Çeviri güncellendi')}catch(e){toast('Hata: '+e.message)}
-  renderAI(w.ai2||'');
+  renderAI(w.ai3||'');
 }
 
 async function aiExplain(force){
@@ -544,7 +544,7 @@ async function aiExplain(force){
   modal(`<h3>🤖 ${esc(w.kelime)}<button onclick="closeModal()">✕</button></h3>
     <div id="aiBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
     <button onclick="aiExplain(true)" style="width:100%;margin-top:.8rem">🔄 Yenile</button>`);
-  if(w.ai2&&force!==true){renderAI(w.ai2);return}
+  if(w.ai3&&force!==true){renderAI(w.ai3);return}
   const ex=w.ornek_cumle&&w.ornek_cumle!=='Örnek yok'?w.ornek_cumle:'';
   const de=S.lang==='de', L=de?'German':'English';
   const prompt=`${L} vocabulary card. Entry: "${w.kelime}" (given TR: ${w.karsiligi}).${ex?` Example sentence: "${ex}".`:''}
@@ -554,29 +554,30 @@ Düzeltme: ONLY if the given TR is wrong for this entry: the correct Turkish tra
 Anlam: real meaning(s) of the base word${ex?', and which one is used in the sentence':''}.
 Kullanım: ${ex?'tense/structure in the sentence (Präsens, Perfekt, Präteritum, Futur, Passiv, Konjunktiv, Imperativ, separable prefix, etc.)':'-'}
 Mastar: infinitive (verbs only)
-${de?'Perfekt: haben/sein + Partizip II (verbs only)\nArtikel: der/die/das + plural (nouns only)':''}`;
+${de?'Perfekt: haben/sein + Partizip II (verbs only)\nArtikel: der/die/das + plural (nouns only)':''}
+Write every line in TURKISH.`;
   try{
     const t=await gem(prompt,800);
-    w.ai2=t; renderAI(t);
-    updateDoc(doc(db,LANGS[S.lang].col,w.id),{ai2:t}).catch(()=>{});
+    w.ai3=t; renderAI(t);
+    updateDoc(doc(db,LANGS[S.lang].col,w.id),{ai3:t}).catch(()=>{});
   }catch(e){if(body())body().textContent='Hata: '+e.message}
 }
 
 /* ── cümledeki bilinmeyen kelime için AI ── */
 async function wordAI(t){
   const sent=S.pendingEx||'', key=`${S.lang}|${t.toLowerCase()}|${sent}`;
-  const c=ls('wai',{}), body=()=>$('#waBody');
+  const c=ls('wai2',{}), body=()=>$('#waBody');
   modal(`<h3>🤖 ${esc(t)}<button onclick="closeModal()">✕</button></h3>
     <div id="waBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
     <button onclick="openAdd(${JSON.stringify(t).replace(/"/g,'&quot;')})" style="width:100%;margin-top:.8rem">➕ Veritabanına ekle</button>`);
   if(c[key]){body().textContent=c[key];return}
   const de=S.lang==='de', L=de?'German':'English';
   const prompt=`${L} sentence: "${sent}"
-Explain the word "${t}" in Turkish, plain text, max 45 words: its Turkish meaning in THIS sentence; if it is an inflected form, give the base form (infinitive/singular) and why it changed (person, tense, case, plural, Partizip...)${de?'; if a noun, give article + plural':''}.`;
+Explain the word "${t}" in Turkish, plain text, max 45 words: its Turkish meaning in THIS sentence; if it is an inflected form, give the base form (infinitive/singular) and why it changed (person, tense, case, plural, Partizip...)${de?'; if a noun, give article + plural':''}. Write in TURKISH.`;
   try{
     const r=await gem(prompt,400);
     c[key]=r; const ks=Object.keys(c); if(ks.length>300)delete c[ks[0]];
-    st('wai',c); if(body())body().textContent=r;
+    st('wai2',c); if(body())body().textContent=r;
   }catch(e){if(body())body().textContent='Hata: '+e.message}
 }
 
