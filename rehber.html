@@ -22,7 +22,7 @@ button:active{transform:scale(.97)}
 select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.5rem}
 .stats{font-size:.72rem;color:var(--mu);margin:.6rem 0;text-align:center;line-height:1.5}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:1.2rem 1rem;text-align:center}
-.meta{display:flex;justify-content:space-between;font-size:.75rem;color:var(--mu);gap:.5rem}
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:var(--mu);gap:.5rem}
 .word{font-family:Georgia,"Times New Roman",serif;font-size:2.4rem;font-weight:700;margin:1rem 0 .6rem;line-height:1.15;word-break:break-word}
 .tools{display:flex;justify-content:center;gap:.5rem;flex-wrap:wrap}
 .tools button{width:2.8rem;height:2.8rem;border-radius:50%;padding:0;font-size:1.15rem}
@@ -59,6 +59,7 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 .li{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--bd)}
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);padding:.6rem 1rem;border-radius:10px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
 .toast.on{opacity:1}
+.del{cursor:pointer;opacity:.55;user-select:none;touch-action:manipulation;padding:0 .4rem}
 #lock{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;gap:.8rem;align-items:center;justify-content:center;z-index:100}
 #lock input{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.7rem;text-align:center;letter-spacing:.3rem;width:10rem}
 #lock .save{width:10rem;margin:0}
@@ -82,9 +83,10 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 const PASS='654881', ORTA_UST=5, BILMIREM_ESK=2;
+const GKEY_DEFAULT='AQ.Ab8RN6KMW0N5f-tn9fSWXO_l6rUQjjRa8IvRd9ujQaIW8YQn2A';
 const ESIK_ORTA=250, ESIK_YUKSEK=150;
 const CARPAN={yuksek:[1,1,1],orta:[1.8,1,.5],az:[3,1.5,.3]};
 const LANGS={en:{col:'sozler',tts:'en-US',ad:'İngilizce'},de:{col:'sozler_de',tts:'de-DE',ad:'Almanca'}};
@@ -211,11 +213,12 @@ function show(){
   const g=grup(w.puan||0), gc=g==='Yaxsi'?'var(--gr)':g==='Orta'?'var(--or)':'var(--rd)';
   $('#main').innerHTML=`
   <div class="card">
-    <div class="meta"><span>🗂️ ${esc(w.qrup||'Default')}${w.yazilmali?' · ✍️':''}</span><span><b style="color:${gc}">●</b> ${w.puan||0} · ${GAD[g]}</span></div>
+    <div class="meta"><span>🗂️ ${esc(w.qrup||'Default')}${w.yazilmali?' · ✍️':''}</span><span class="del" ondblclick="delWord()" title="Silmek için çift tıkla">🗑️</span><span><b style="color:${gc}">●</b> ${w.puan||0} · ${GAD[g]}</span></div>
     <div class="word" id="word" style="color:${kelimeRenk(w.kelime)}">${test?'❓ '+esc(temel(w.kelime)):esc(w.kelime)}</div>
     <div class="tools">
       <button onclick="say()" aria-label="Dinle">🔊</button>
       <button onclick="openDict()" aria-label="Sözlük">📖</button>
+      <button onclick="aiExplain()" aria-label="AI">🤖</button>
       <button onclick="mic()" aria-label="Konuş">🎤</button>
       <button onclick="openGroup()" aria-label="Grup">🗂️</button>
     </div>
@@ -245,7 +248,7 @@ function showExample(){
   $('#ex').innerHTML=c.match(/[A-Za-zÄÖÜäöüß']+|[^A-Za-zÄÖÜäöüß']+/g).map(t=>{
     if(!/^[A-Za-zÄÖÜäöüß']/.test(t))return esc(t);
     const k=t.toLowerCase().replace(/^'+|'+$/g,'');
-    return known.has(k)?`<span class="k">${esc(t)}</span>`:`<span class="c" onclick="openAdd('${esc(t)}')">${esc(t)}</span>`;
+    return known.has(k)?`<span class="k">${esc(t)}</span>`:`<span class="c" onclick="wordAI(this.textContent)">${esc(t)}</span>`;
   }).join('');
   translate(c).then(r=>{const el=$('#tr');if(el&&S.pendingEx===c)el.textContent=r||'(çeviri alınamadı)'});
 }
@@ -389,6 +392,7 @@ function openSettings(){
     ${chk('srs','🔁 Aralıklı tekrar')}${chk('blur','Anlamı gizle (dokununca açılır)')}
     ${S.lang==='de'?chk('test','🎯 Artikel testi (1/2/3)'):''}
     <div class="opt"><span>Yazılmalı kelimeler</span><button onclick="openYaz()">✍️ Aç</button></div>
+    <div class="opt"><span>AI anahtarı (Gemini)</span><button onclick="openKey()">🔑</button></div>
     <div class="opt"><span>Yeni kelime</span><button onclick="openAdd()">➕ Ekle</button></div>
     <div class="opt"><span>Panodan çevir</span><button onclick="clipTr()">📋 Çevir</button></div>`);
 }
@@ -476,6 +480,106 @@ async function clipTr(){
   const r=await translate(t); $('#ct').textContent=r||'Çeviri başarısız';
 }
 
+/* ── kelime sil ── */
+async function delWord(){
+  const w=S.cur; if(!w)return;
+  if(!confirm(`'${w.kelime}' silinsin mi?`))return;
+  try{
+    await deleteDoc(doc(db,LANGS[S.lang].col,w.id));
+    S.words[S.lang]=W().filter(x=>x.id!==w.id);
+    S.cur=null; buildFilter(); toast('Silindi'); show();
+  }catch(e){toast('Hata: '+e.message)}
+}
+
+/* ── AI açıklama (Gemini, az token) ── */
+function openKey(){
+  modal(`<h3>🔑 Gemini<button onclick="closeModal()">✕</button></h3>
+    <label>API anahtarı (boş bırakırsan koddaki varsayılan kullanılır)</label><input id="gk" value="${esc(ls('gkey',''))}">
+    <div style="color:var(--mu);font-size:.85rem;margin-top:.5rem">📊 Bugün (bu cihaz): ${(()=>{const u=ls('gusage',{});return u.d===new Date().toISOString().slice(0,10)?`${u.req} istek · ${u.tok} token`:'0 istek · 0 token'})()}<br>Kalan hak için: aistudio.google.com/usage</div>
+    <label>Model</label><input id="gm" value="${esc((ls('gmodel','')==='gemini-2.5-flash-lite'?'gemini-3.5-flash-lite':ls('gmodel','gemini-3.5-flash-lite')))}">
+    <button class="save" onclick="saveKey()">💾 Kaydet</button>`);
+}
+function saveKey(){st('gkey',$('#gk').value.trim());st('gmodel',$('#gm').value.trim()||'gemini-3.5-flash-lite');closeModal();toast('Kaydedildi')}
+
+async function gem(prompt,max){
+  const key=ls('gkey','')||GKEY_DEFAULT;
+  if(!key)throw new Error('Önce ⚙️ Ayarlar → 🔑 bölümüne Gemini anahtarını gir.');
+  const m=ls('gmodel','');
+  const model=(!m||m==='gemini-2.5-flash-lite')?'gemini-3.5-flash-lite':m;
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error?.message||r.status);
+  const t=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+  if(!t)throw new Error('Boş cevap');
+  try{
+    const d=new Date().toISOString().slice(0,10), u=ls('gusage',{});
+    const x=u.d===d?u:{d,req:0,tok:0};
+    x.req++; x.tok+=j.usageMetadata?.totalTokenCount||0; st('gusage',x);
+    toast(`🤖 ${j.usageMetadata?.totalTokenCount||'?'} token · bugün ${x.req} istek, ${x.tok} token`);
+  }catch{}
+  return t;
+}
+
+function renderAI(t){
+  const w=S.cur, el=$('#aiBody'); if(!el||!w)return;
+  const m=t.match(/^Düzeltme:\s*(.+)$/m);
+  S.fix=m?m[1].trim().replace(/[.。]+$/,''):'';
+  if(!m||!S.fix||S.fix.toLowerCase()===(w.karsiligi||'').toLowerCase()){el.textContent=t;return}
+  el.innerHTML=esc(t).replace(esc(m[0]),`Düzeltme: <span class="c" style="color:var(--der);text-decoration:underline dotted;cursor:pointer" onclick="fixTr()">${esc(S.fix)}</span>`);
+}
+async function fixTr(){
+  const w=S.cur; if(!w||!S.fix)return;
+  if(!confirm(`Çeviri değiştirilsin mi?\n\n${w.karsiligi}  →  ${S.fix}`))return;
+  w.karsiligi=S.fix;
+  const m=$('#mean'); if(m)m.textContent=w.karsiligi;
+  try{await updateDoc(doc(db,LANGS[S.lang].col,w.id),{karsiligi:w.karsiligi});toast('Çeviri güncellendi')}catch(e){toast('Hata: '+e.message)}
+  renderAI(w.ai2||'');
+}
+
+async function aiExplain(force){
+  const w=S.cur; if(!w)return;
+  const body=()=>$('#aiBody');
+  modal(`<h3>🤖 ${esc(w.kelime)}<button onclick="closeModal()">✕</button></h3>
+    <div id="aiBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
+    <button onclick="aiExplain(true)" style="width:100%;margin-top:.8rem">🔄 Yenile</button>`);
+  if(w.ai2&&force!==true){renderAI(w.ai2);return}
+  const ex=w.ornek_cumle&&w.ornek_cumle!=='Örnek yok'?w.ornek_cumle:'';
+  const de=S.lang==='de', L=de?'German':'English';
+  const prompt=`${L} vocabulary card. Entry: "${w.kelime}" (given TR: ${w.karsiligi}).${ex?` Example sentence: "${ex}".`:''}
+Answer in Turkish, plain text, no markdown, max 80 words. Use only these lines, skip the ones that don't apply:
+Kök: ONLY if the entry is an inflected form (conjugated verb, plural, case, comparative, participle) or its spelling differs from the dictionary form: write the base form (${de?'infinitive / nominative singular':'infinitive / singular'}) and explain WHY it looks like this (person, tense, case, plural, stem-vowel change such as a→ä, etc.)
+Düzeltme: ONLY if the given TR is wrong for this entry: the correct Turkish translation in 1-3 words, nothing else (no explanation on this line).
+Anlam: real meaning(s) of the base word${ex?', and which one is used in the sentence':''}.
+Kullanım: ${ex?'tense/structure in the sentence (Präsens, Perfekt, Präteritum, Futur, Passiv, Konjunktiv, Imperativ, separable prefix, etc.)':'-'}
+Mastar: infinitive (verbs only)
+${de?'Perfekt: haben/sein + Partizip II (verbs only)\nArtikel: der/die/das + plural (nouns only)':''}`;
+  try{
+    const t=await gem(prompt,800);
+    w.ai2=t; renderAI(t);
+    updateDoc(doc(db,LANGS[S.lang].col,w.id),{ai2:t}).catch(()=>{});
+  }catch(e){if(body())body().textContent='Hata: '+e.message}
+}
+
+/* ── cümledeki bilinmeyen kelime için AI ── */
+async function wordAI(t){
+  const sent=S.pendingEx||'', key=`${S.lang}|${t.toLowerCase()}|${sent}`;
+  const c=ls('wai',{}), body=()=>$('#waBody');
+  modal(`<h3>🤖 ${esc(t)}<button onclick="closeModal()">✕</button></h3>
+    <div id="waBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
+    <button onclick="openAdd(${JSON.stringify(t).replace(/"/g,'&quot;')})" style="width:100%;margin-top:.8rem">➕ Veritabanına ekle</button>`);
+  if(c[key]){body().textContent=c[key];return}
+  const de=S.lang==='de', L=de?'German':'English';
+  const prompt=`${L} sentence: "${sent}"
+Explain the word "${t}" in Turkish, plain text, max 45 words: its Turkish meaning in THIS sentence; if it is an inflected form, give the base form (infinitive/singular) and why it changed (person, tense, case, plural, Partizip...)${de?'; if a noun, give article + plural':''}.`;
+  try{
+    const r=await gem(prompt,400);
+    c[key]=r; const ks=Object.keys(c); if(ks.length>300)delete c[ks[0]];
+    st('wai',c); if(body())body().textContent=r;
+  }catch(e){if(body())body().textContent='Hata: '+e.message}
+}
+
 /* ── dil / filtre / yükleme ── */
 function setFilter(v){S.filter=v;show()}
 async function setLang(l){
@@ -506,7 +610,7 @@ document.addEventListener('keydown',e=>{
   else if(k==='m'||k==='M')openGroup();
 });
 
-Object.assign(window,{setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,addTr,addEx,addSave,openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,
+Object.assign(window,{setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,addTr,addEx,addSave,openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,delWord,aiExplain,wordAI,fixTr,openKey,saveKey,
   unlock(){if($('#pw').value===PASS){st('auth',PASS);$('#lock').style.display='none';start()}else{$('#pwe').textContent='Şifre yanlış';$('#pw').value=''}}});
 
 function start(){applySet();load(S.lang)}
