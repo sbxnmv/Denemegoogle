@@ -695,7 +695,40 @@ async function load(l){
    K: uzun sessiz ses döngüsü → Chrome/Android bunu "müzik" sayar, bildirimde kontroller çıkar, ekran kapanınca sayfa uyumaz.
    V: kelime ve anlam sesleri (Google ses servisi; olmazsa tarayıcı sesi). Kelime → 2 sn → anlam → 2 sn → sonraki. ── */
 const L={k:new Audio(),v:new Audio(),on:false,paused:false,list:[],i:0,seg:0,txt:[],t:null,g:null,sil:null};
-const ttsUrl=(t,l)=>`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${l}&q=${encodeURIComponent(t.slice(0,180))}`;
+/* Gemini ses üretimi: her kelime/anlam bir kez üretilir, cihazda saklanır (sonra internetsiz de çalar) */
+const TTS_MODEL='gemini-3.1-flash-tts-preview', ttsMem=new Map();
+function wavBlob(pcm,rate=24000){
+  const n=pcm.byteLength,b=new DataView(new ArrayBuffer(44+n)),w=(o,t)=>[...t].forEach((c,k)=>b.setUint8(o+k,c.charCodeAt(0)));
+  w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);
+  b.setUint32(24,rate,true);b.setUint32(28,rate*2,true);b.setUint16(32,2,true);b.setUint16(34,16,true);w(36,'data');b.setUint32(40,n,true);
+  new Uint8Array(b.buffer,44).set(new Uint8Array(pcm));
+  return new Blob([b],{type:'audio/wav'});
+}
+function ttsGet(text,lang){
+  const key='tts|'+lang+'|'+text;
+  if(!ttsMem.has(key))ttsMem.set(key,(async()=>{
+    let buf=null;try{buf=await idb.get(key)}catch{}
+    if(!buf){
+      const k=await getKey(); if(!k)throw new Error('Gemini anahtarı yok (⚙️→🔑)');
+      const who={de:'German',en:'English',tr:'Turkish'}[lang];
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent`,{method:'POST',
+        headers:{'Content-Type':'application/json','x-goog-api-key':k},
+        body:JSON.stringify({contents:[{parts:[{text:`Say slowly and clearly in ${who}: ${text}`}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Kore'}}}}})});
+      const j=await r.json(); if(!r.ok)throw new Error(j.error?.message||r.status);
+      const b64=j.candidates?.[0]?.content?.parts?.find(x=>x.inlineData)?.inlineData?.data; if(!b64)throw new Error('ses dönmedi');
+      const bin=atob(b64),u8=new Uint8Array(bin.length);for(let q=0;q<bin.length;q++)u8[q]=bin.charCodeAt(q);
+      buf=u8.buffer;try{await idb.set(key,buf)}catch{}
+    }
+    return URL.createObjectURL(wavBlob(buf));
+  })().catch(e=>{ttsMem.delete(key);throw e}));
+  return ttsMem.get(key);
+}
+const plTexts=w=>[(w.kelime||'').replace(/\(.*?\)/g,' ').replace(/\s+/g,' ').trim(),(w.karsiligi||'').replace(/[\/]/g,', ')];
+async function plPrefetch(){ /* sıradaki kelimelerin sesini önceden hazırla */
+  if(L.pf)return;L.pf=true;
+  try{for(let d=1;d<=4&&L.on;d++){const w=L.list[(L.i+d)%L.list.length],[a,b]=plTexts(w);await ttsGet(a,S.lang);await ttsGet(b,'tr')}}catch{}
+  L.pf=false;
+}
 function silence(sec){
   const sr=8000,n=sr*sec,b=new DataView(new ArrayBuffer(44+n)),w=(o,t)=>[...t].forEach((c,i)=>b.setUint8(o+i,c.charCodeAt(0)));
   w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);
@@ -719,7 +752,7 @@ function startListen(){
 function plLoad(){
   if(!L.on)return;
   const w=L.list[L.i%L.list.length], wt=(w.kelime||'').replace(/\(.*?\)/g,' ').replace(/\s+/g,' ').trim(), mt=(w.karsiligi||'').replace(/[\/]/g,', ');
-  L.txt=[wt,mt]; L.seg=0;
+  L.txt=[wt,mt]; L.seg=0; plPrefetch();
   $('#plW').textContent=w.kelime; $('#plM').textContent=w.karsiligi;
   try{navigator.mediaSession.metadata=new MediaMetadata({title:w.kelime,artist:w.karsiligi,album:'Yolda dinle · '+LANGS[S.lang].ad})}catch{}
   plState(true); plSpeak();
@@ -735,14 +768,15 @@ function plSpeak(){
     if(!window.speechSynthesis){dbg('⚠️ Ses yok: '+why);return next()}
     const tl=L.seg?'tr-TR':LANGS[S.lang].tts, u=new SpeechSynthesisUtterance(t);u.lang=tl;u.rate=.9;
     const vo=speechSynthesis.getVoices().find(x=>x.lang.replace('_','-').toLowerCase().startsWith(tl.slice(0,2)));if(vo)u.voice=vo;
-    u.onstart=()=>dbg('🔊 tarayıcı sesi (Google: '+why+')');
-    u.onend=next;u.onerror=e=>{dbg('⚠️ Ses hatası: '+(e.error||'?')+' · Google: '+why);next()};
+    u.onstart=()=>dbg('🔊 tarayıcı sesi · Gemini: '+why);
+    u.onend=next;u.onerror=e=>{dbg('⚠️ '+(e.error||'?')+' · Gemini: '+why);next()};
     L.g=setTimeout(next,8000);
     speechSynthesis.speak(u);
   };
-  v.onended=next; v.onplaying=()=>dbg('🔊 Google sesi'); v.onerror=()=>fall('hata '+(v.error?.code||'?'));
-  v.src=ttsUrl(t,lang); v.play().catch(e=>fall(e.name));
-  L.g=setTimeout(()=>{if(!done&&!fb)fall('zaman aşımı')},5000);
+  v.onended=next; v.onplaying=()=>dbg('🔊 Gemini sesi'); v.onerror=()=>fall('çalma hatası');
+  dbg('⏳ ses hazırlanıyor…');
+  ttsGet(t,lang).then(u=>{if(done||fb||!L.on)return;v.src=u;v.play().catch(e=>fall(e.name))}).catch(e=>fall(String(e.message).slice(0,80)));
+  L.g=setTimeout(()=>{if(!done&&!fb)fall('zaman aşımı')},20000);
 }
 function plToggle(play){
   if(!L.on)return;
