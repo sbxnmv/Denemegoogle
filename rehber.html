@@ -762,25 +762,40 @@ const dbg=t=>{const e=$('#plD');if(e)e.textContent=t};
 function plSpeak(){
   if(!L.on||L.paused)return;
   clearTimeout(L.t);clearTimeout(L.g);speechSynthesis?.cancel();
-  const t=L.txt[L.seg], lang=L.seg?'tr':S.lang, v=L.v; let done=false, fb=false;
+  const t=L.txt[L.seg], lang=L.seg?'tr':S.lang, v=L.v, q=encodeURIComponent(t.slice(0,180)); let done=false;
   const next=()=>{if(done)return;done=true;clearTimeout(L.g);L.t=setTimeout(()=>{if(!L.on||L.paused)return;L.seg++;if(L.seg>=2){L.i++;plLoad()}else plSpeak()},2000)};
-  const fall=why=>{
-    if(done||fb)return;fb=true;
-    if(!window.speechSynthesis){dbg('⚠️ Ses yok: '+why);return next()}
-    const tl=L.seg?'tr-TR':LANGS[S.lang].tts, u=new SpeechSynthesisUtterance(t);u.lang=tl;u.rate=.9;
-    const vo=speechSynthesis.getVoices().find(x=>x.lang.replace('_','-').toLowerCase().startsWith(tl.slice(0,2)));if(vo)u.voice=vo;
-    u.onstart=()=>dbg('🔊 tarayıcı sesi'+(S.set.gem?' · Gemini: '+why:''));
-    u.onend=next;u.onerror=e=>{dbg('⚠️ tarayıcı sesi hatası: '+(e.error||'?'));next()};
-    L.g=setTimeout(next,8000);
-    speechSynthesis.speak(u);
+  /* 3) son çare: tarayıcı sesi (cancel'dan hemen sonra speak() sessiz kalıyordu → 300 ms bekle, nesneyi sakla) */
+  const speech=why=>{
+    if(done)return;clearTimeout(L.g);
+    if(!window.speechSynthesis){dbg('⚠️ Bu tarayıcıda ses yok');return next()}
+    const tl=L.seg?'tr-TR':LANGS[S.lang].tts, u=new SpeechSynthesisUtterance(t); L.u=u; u.lang=tl; u.rate=.9; u.volume=1;
+    const vo=speechSynthesis.getVoices().find(x=>x.lang.replace('_','-').toLowerCase().startsWith(tl.slice(0,2))); if(vo)u.voice=vo;
+    let started=false;
+    u.onstart=()=>{started=true;dbg('🔊 tarayıcı sesi')};
+    u.onend=next; u.onerror=e=>{dbg('⚠️ tarayıcı sesi hatası: '+(e.error||'?'));next()};
+    speechSynthesis.cancel();
+    setTimeout(()=>{if(done)return;speechSynthesis.resume();speechSynthesis.speak(u)},300);
+    L.g=setTimeout(()=>{if(!started){dbg('⚠️ Ses başlamadı. Telefon ayarları → Metin okuma → '+(L.seg?'Türkçe':LANGS[S.lang].ad)+' ses paketi yüklü mü?');next()}},6000);
   };
-  v.onended=next; v.onplaying=()=>dbg('🔊 Gemini sesi'); v.onerror=()=>fall('çalma hatası');
+  /* 2) Google ses adresleri */
+  const urls=[`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=${q}`,`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`];
+  const tryAudio=i=>{
+    if(done)return; if(i>=urls.length)return speech();
+    let used=false; const fail=()=>{if(used)return;used=true;tryAudio(i+1)};
+    v.onerror=fail; v.onended=next; v.onplaying=()=>dbg('🔊 Google sesi');
+    v.src=urls[i]; v.play().catch(fail);
+  };
+  /* 1) Gemini (açıksa) ya da daha önce kaydedilmiş ses */
   dbg('⏳ ses hazırlanıyor…');
-  ttsGet(t,lang,!S.set.gem||L.noG).then(u=>{if(done||fb||!L.on)return;v.src=u;v.play().catch(e=>fall(e.name))}).catch(e=>{
-    if(S.set.gem&&!L.noG&&/quota|429|exhaust|limit/i.test(e.message)){L.noG=true;toast('Gemini limiti doldu, tarayıcı sesine geçildi')}
-    fall(String(e.message).slice(0,80));
+  ttsGet(t,lang,!S.set.gem||L.noG).then(u=>{
+    if(done||!L.on)return;
+    v.onended=next; v.onplaying=()=>dbg('🔊 kayıtlı/Gemini sesi'); v.onerror=()=>tryAudio(0);
+    v.src=u; v.play().catch(()=>tryAudio(0));
+  }).catch(e=>{
+    if(S.set.gem&&!L.noG&&/quota|429|exhaust|limit/i.test(e.message)){L.noG=true;toast('Gemini limiti doldu, ücretsiz sese geçildi')}
+    tryAudio(0);
   });
-  L.g=setTimeout(()=>{if(!done&&!fb)fall('zaman aşımı')},20000);
+  L.g=setTimeout(()=>{if(!done)speech()},20000);
 }
 function plToggle(play){
   if(!L.on)return;
