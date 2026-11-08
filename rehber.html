@@ -13,7 +13,7 @@ html{font-size:var(--fs)}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 button,select,input{font:inherit;color:inherit}
 button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:.5rem .8rem}
-button:active{transform:scale(.97)}
+button:active{transform:scale(.97)}button:disabled{opacity:.45}
 .wrap{max-width:560px;margin:0 auto;padding:.7rem .9rem 2rem}
 .bar{display:flex;gap:.5rem;align-items:center}
 .seg{display:flex;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
@@ -23,19 +23,15 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 .stats{font-size:.72rem;color:var(--mu);margin:.6rem 0;text-align:center;line-height:1.5}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:1.2rem 1rem;text-align:center}
 .meta{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:var(--mu);gap:.5rem}
-.word{font-family:Georgia,"Times New Roman",serif;font-size:2.4rem;font-weight:700;margin:1rem 0 .6rem;line-height:1.15;word-break:break-word}
+.word{font-family:Georgia,serif;font-size:2.4rem;font-weight:700;margin:1rem 0 .6rem;line-height:1.15;word-break:break-word;cursor:pointer}
 .tools{display:flex;justify-content:center;gap:.5rem;flex-wrap:wrap}
 .tools button{width:2.8rem;height:2.8rem;border-radius:50%;padding:0;font-size:1.15rem}
-.art{display:none;gap:.5rem;justify-content:center;margin-top:.9rem}
-.art.on{display:flex}
+.art{display:none;gap:.5rem;justify-content:center;margin-top:.9rem}.art.on{display:flex}
 .art button{flex:1;max-width:6.5rem;color:#fff;font-weight:700;font-size:1.1rem;border:0;padding:.7rem}
-.art button:disabled{opacity:.45}
 .verdict{min-height:1.4rem;font-weight:700;margin-top:.5rem;font-size:.9rem}
-.mean{font-size:1.25rem;margin:1rem 0 .6rem}
-.mean.blur{filter:blur(7px);cursor:pointer}
+.mean{font-size:1.25rem;margin:1rem 0 .6rem}.mean.blur{filter:blur(7px);cursor:pointer}
 .ex{font-size:1rem;line-height:1.6;margin-top:.4rem}
-.ex .k{color:var(--gr);font-weight:700}
-.ex .c{color:var(--der);text-decoration:underline dotted;cursor:pointer}
+.ex .k{color:var(--gr);font-weight:700}.ex .c{color:var(--der);text-decoration:underline dotted;cursor:pointer}
 .tr{font-size:.82rem;color:var(--mu);margin-top:.3rem;min-height:1rem}
 .spk{font-size:.8rem;margin-top:.5rem;min-height:1rem;color:var(--mu)}
 .ans{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.8rem}
@@ -44,22 +40,23 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 .skip{display:block;margin:.7rem auto 0;color:var(--mu);background:none}
 .hint{font-size:.7rem;color:var(--mu);text-align:center;margin-top:.8rem}
 .empty{padding:2.5rem 1rem;color:var(--mu)}
+.mini{font-size:.8rem;color:var(--mu);line-height:1.5}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
 #modal.on{display:flex}
 .sheet{background:var(--bg);border:1px solid var(--bd);border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:85dvh;overflow-y:auto;padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom))}
 .sheet h3{margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center}
 .sheet label{display:block;font-size:.8rem;color:var(--mu);margin:.7rem 0 .25rem}
-.sheet input[type=text],.sheet input:not([type]),.sheet select{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.6rem}
-.row{display:flex;gap:.5rem;align-items:center}
-.row>*{flex:1}.row>button{flex:0 0 auto}
-.save{background:var(--ac);color:#14130f;border:0;font-weight:700;width:100%;margin-top:1rem;padding:.75rem}
+.sheet input:not([type=checkbox]):not([type=file]),.sheet select{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.6rem}
+.row{display:flex;gap:.5rem;align-items:center}.row>*{flex:1}.row>button{flex:0 0 auto}
+.save{background:var(--ac);color:#14130f;border:0;font-weight:700;width:100%;margin-top:.8rem;padding:.75rem}
+.sec{background:var(--card)!important;color:var(--tx)!important;border:1px solid var(--bd)!important}
 .opt{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--bd)}
 .dict .pos{color:var(--ac);font-size:.75rem;margin:.8rem 0 .2rem;font-weight:700}
 .dict .d{margin-bottom:.2rem;line-height:1.5}.dict .e{color:var(--mu);font-style:italic;font-size:.85rem;padding-left:.6rem;border-left:2px solid var(--bd);margin-bottom:.4rem}
 .li{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--bd)}
-.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);padding:.6rem 1rem;border-radius:10px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);padding:.6rem 1rem;border-radius:10px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;max-width:90vw}
 .toast.on{opacity:1}
-.del{cursor:pointer;opacity:.55;user-select:none;touch-action:manipulation;padding:0 .4rem}
+.del{cursor:pointer;opacity:.7;padding:0 .4rem}
 #lock{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;gap:.8rem;align-items:center;justify-content:center;z-index:100}
 #lock input{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.7rem;text-align:center;letter-spacing:.3rem;width:10rem}
 #lock .save{width:10rem;margin:0}
@@ -67,11 +64,11 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 </head>
 <body>
 <div id="lock" style="display:none"><h2>Kelime Öğren</h2><input type="password" id="pw" placeholder="Şifre" onkeydown="if(event.key==='Enter')unlock()"><button class="save" onclick="unlock()">Giriş</button><div id="pwe" style="color:var(--rd);font-size:.8rem"></div></div>
-
 <div class="wrap">
   <div class="bar">
     <div class="seg" id="langSeg"><button data-l="en" onclick="setLang('en')">EN</button><button data-l="de" onclick="setLang('de')">DE</button></div>
     <select id="filter" onchange="setFilter(this.value)"></select>
+    <button onclick="openAdd()" aria-label="Kelime ekle">➕</button>
     <button onclick="openSettings()" aria-label="Ayarlar">⚙️</button>
   </div>
   <div class="stats" id="stats">Firebase'e bağlanıyor…</div>
@@ -83,11 +80,9 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const PASS='654881', ORTA_UST=5, BILMIREM_ESK=2;
-const GKEY_DEFAULT='AQ.Ab8RN6L5NmMrENTzqnuvcY4PsFZDjyIqrBIRyFxAvaVFSiI9Gg', GKEY_OLD='AQ.Ab8RN6KMW0N5f-tn9fSWXO_l6rUQjjRa8IvRd9ujQaIW8YQn2A';
-const ESIK_ORTA=250, ESIK_YUKSEK=150;
+const PASS='654881', ORTA_UST=5, BILMIREM_ESK=2, ESIK_ORTA=250, ESIK_YUKSEK=150;
 const CARPAN={yuksek:[1,1,1],orta:[1.8,1,.5],az:[3,1.5,.3]};
 const LANGS={en:{col:'sozler',tts:'en-US',ad:'İngilizce'},de:{col:'sozler_de',tts:'de-DE',ad:'Almanca'}};
 const SRS={BILMIYORUM_SN:600,ORTA_MIN_GUN:.1,CARPAN:2.2,MAX_GUN:180};
@@ -100,8 +95,17 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const st=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const today=()=>new Date().toISOString().slice(0,10);
+/* anahtar için ikinci depo (IndexedDB): localStorage silinse bile anahtar kaybolmaz */
+const idb=(()=>{try{
+  const o=indexedDB.open('kv',1);o.onupgradeneeded=()=>o.result.createObjectStore('s');
+  const p=new Promise(r=>{o.onsuccess=()=>r(o.result);o.onerror=()=>r(null)});
+  return{get:k=>p.then(d=>d?new Promise(r=>{const q=d.transaction('s').objectStore('s').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r()}):null),
+         set:(k,v)=>p.then(d=>d&&d.transaction('s','readwrite').objectStore('s').put(v,k))};
+}catch{return{get:async()=>null,set:async()=>0}}})();
+async function getKey(){let k=ls('gkey','');if(!k){try{k=(await idb.get('gkey'))||''}catch{}if(k)st('gkey',k)}return k}
 
-const S={lang:ls('lang','en'),words:{en:null,de:null},cur:null,filter:'all',answered:false,waiting:false,
+const S={lang:ls('lang','en'),words:{en:null,de:null},cur:null,filter:'all',answered:false,waiting:false,xr:[],wq:'',
   set:Object.assign({theme:'dark',font:1,srs:true,blur:true,test:false},ls('set',{})),dict:'',trc:{}};
 const W=()=>S.words[S.lang]||[];
 const grup=p=>p<BILMIREM_ESK?'Bilmirem':p<ORTA_UST?'Orta':'Yaxsi';
@@ -117,8 +121,7 @@ function temel(k){
 }
 function artikeller(k){
   const p=(k||'').trim().split(/\s+/);
-  if(p.length<2)return [];
-  return p[0].toLowerCase().split('/').filter(x=>ART.includes(x));
+  return p.length<2?[]:p[0].toLowerCase().split('/').filter(x=>ART.includes(x));
 }
 function kelimeRenk(k){
   if(S.lang==='de'&&!S.waiting){const a=artikeller(k)[0];if(a)return `var(--${a})`}
@@ -129,8 +132,7 @@ function kelimeRenk(k){
 const vakti=(w,n=Date.now()/1000)=>w.sonraki_tekrar==null||w.sonraki_tekrar<=n;
 function srsAgirlik(w,n){
   if(w.sonraki_tekrar==null)return 1;
-  const gec=Math.max(0,n-w.sonraki_tekrar), ar=Math.max((w.aralik||0)*86400,600);
-  return 1+Math.min(gec/ar,4);
+  return 1+Math.min(Math.max(0,n-w.sonraki_tekrar)/Math.max((w.aralik||0)*86400,600),4);
 }
 function srsGuncelle(s,d){
   const n=Date.now()/1000; let a=s.aralik||0, nx;
@@ -163,11 +165,9 @@ function sec(){
     if(!due.length)due=[...p].sort((a,b)=>(a.sonraki_tekrar||0)-(b.sonraki_tekrar||0)).slice(0,5);
     p=due;
   }
-  const aday=p.filter(w=>w.id!==S.cur?.id), pool=aday.length?aday:p;
-  const [cb,co,ci]=carpanlar();
+  const aday=p.filter(w=>w.id!==S.cur?.id), pool=aday.length?aday:p, [cb,co,ci]=carpanlar();
   const ag=pool.map(w=>{
-    const pu=w.puan||0,g=grup(pu);
-    let a=Math.max(1,10-pu)*(g==='Bilmirem'?cb:g==='Orta'?co:ci);
+    const pu=w.puan||0,g=grup(pu), a=Math.max(1,10-pu)*(g==='Bilmirem'?cb:g==='Orta'?co:ci);
     return S.set.srs?a*srsAgirlik(w,n):a;
   });
   let r=Math.random()*ag.reduce((a,b)=>a+b,0);
@@ -178,10 +178,8 @@ function sec(){
 /* ── ekran ── */
 function groups(){return [...new Set(W().map(w=>w.qrup).filter(q=>q&&!['Bilmirem','Orta','Yaxsi','Default'].includes(q)))].sort()}
 function buildFilter(){
-  const c=W(), yaz=c.filter(w=>w.yazilmali).length;
-  $('#filter').innerHTML=
-    `<option value="all">Tümü</option><option value="Bilmirem">Bilmirem</option><option value="Orta">Orta</option><option value="Yaxsi">İyi bildiğim</option>`+
-    `<option value="yaz">✍️ Yazılmalı (${yaz})</option>`+
+  const yaz=W().filter(w=>w.yazilmali).length;
+  $('#filter').innerHTML=`<option value="all">Tümü</option><option value="Bilmirem">Bilmirem</option><option value="Orta">Orta</option><option value="Yaxsi">İyi bildiğim</option><option value="yaz">✍️ Yazılmalı (${yaz})</option>`+
     groups().map(g=>`<option value="g:${esc(g)}">🗂️ ${esc(g)}</option>`).join('');
   $('#filter').value=S.filter;
   if($('#filter').value!==S.filter){S.filter='all';$('#filter').value='all'}
@@ -189,8 +187,7 @@ function buildFilter(){
 function stats(){
   const c=W(),n=Date.now()/1000,g={Bilmirem:0,Orta:0,Yaxsi:0};
   c.forEach(w=>g[grup(w.puan||0)]++);
-  $('#stats').innerHTML=`${LANGS[S.lang].ad} · ${c.length} kelime<br>Bilmirem ${g.Bilmirem} · Orta ${g.Orta} · İyi ${g.Yaxsi}`+
-    (S.set.srs?` · ⏰ vakti gelen ${c.filter(w=>vakti(w,n)).length}`:'');
+  $('#stats').innerHTML=`${LANGS[S.lang].ad} · ${c.length} kelime<br>Bilmirem ${g.Bilmirem} · Orta ${g.Orta} · İyi ${g.Yaxsi}`+(S.set.srs?` · ⏰ vakti gelen ${c.filter(w=>vakti(w,n)).length}`:'');
 }
 function applySet(){
   document.documentElement.dataset.theme=S.set.theme;
@@ -198,13 +195,12 @@ function applySet(){
   document.querySelectorAll('#langSeg button').forEach(b=>b.classList.toggle('on',b.dataset.l===S.lang));
   st('set',S.set);
 }
-
 function show(){
   S.answered=false;
   const w=sec();
   if(!w){
     S.cur=null;
-    $('#main').innerHTML=`<div class="card empty">${W().length?'Bu filtrede kelime yok.':'Henüz kelime yok.'}<br><br><button onclick="openAdd()">➕ Kelime ekle</button></div>`;
+    $('#main').innerHTML=`<div class="card empty">${W().length?'Bu filtrede kelime yok.':'Henüz kelime yok.'}<br><br><div class="row"><button onclick="openAdd()">➕ Kelime ekle</button><button onclick="openXls()">📥 Excel'den yükle</button></div></div>`;
     stats();return;
   }
   S.cur=w;
@@ -213,8 +209,8 @@ function show(){
   const g=grup(w.puan||0), gc=g==='Yaxsi'?'var(--gr)':g==='Orta'?'var(--or)':'var(--rd)';
   $('#main').innerHTML=`
   <div class="card">
-    <div class="meta"><span>🗂️ ${esc(w.qrup||'Default')}${w.yazilmali?' · ✍️':''}</span><span class="del" ondblclick="delWord()" title="Silmek için çift tıkla">🗑️</span><span><b style="color:${gc}">●</b> ${w.puan||0} · ${GAD[g]}</span></div>
-    <div class="word" id="word" style="color:${kelimeRenk(w.kelime)}">${test?'❓ '+esc(temel(w.kelime)):esc(w.kelime)}</div>
+    <div class="meta"><span>🗂️ ${esc(w.qrup||'Default')}${w.yazilmali?' · ✍️':''}</span><span class="del" onclick="openEdit()" title="Düzenle / sil">✏️</span><span><b style="color:${gc}">●</b> ${w.puan||0} · ${GAD[g]}</span></div>
+    <div class="word" id="word" onclick="say();$('#mean').classList.remove('blur')" style="color:${kelimeRenk(w.kelime)}">${test?'❓ '+esc(temel(w.kelime)):esc(w.kelime)}</div>
     <div class="tools">
       <button onclick="say()" aria-label="Dinle">🔊</button>
       <button onclick="openDict()" aria-label="Sözlük">📖</button>
@@ -222,7 +218,7 @@ function show(){
       <button onclick="mic()" aria-label="Konuş">🎤</button>
       <button onclick="openGroup()" aria-label="Grup">🗂️</button>
     </div>
-    <div class="art ${test?'on':''}" id="art">${ART.map((a,i)=>`<button style="background:var(--${a})" onclick="pickArt('${a}')">${a}</button>`).join('')}</div>
+    <div class="art ${test?'on':''}" id="art">${ART.map(a=>`<button style="background:var(--${a})" onclick="pickArt('${a}')">${a}</button>`).join('')}</div>
     <div class="verdict" id="verdict"></div>
     <div class="mean ${S.set.blur?'blur':''}" id="mean" onclick="this.classList.remove('blur')">${esc(w.karsiligi)}</div>
     <div class="ex" id="ex"></div><div class="tr" id="tr"></div>
@@ -235,8 +231,7 @@ function show(){
   </div>
   <button class="skip" onclick="show()">Geç →</button>`;
   stats();
-  const ornek=w.ornek_cumle&&w.ornek_cumle!=='Örnek yok'?w.ornek_cumle:'';
-  S.pendingEx=ornek;
+  S.pendingEx=w.ornek_cumle&&w.ornek_cumle!=='Örnek yok'?w.ornek_cumle:'';
   if(!test)showExample();
   S.dict='';loadDict(w.kelime);
   say(test?temel(w.kelime):w.kelime);
@@ -248,7 +243,7 @@ function showExample(){
   $('#ex').innerHTML=c.match(/[A-Za-zÄÖÜäöüß']+|[^A-Za-zÄÖÜäöüß']+/g).map(t=>{
     if(!/^[A-Za-zÄÖÜäöüß']/.test(t))return esc(t);
     const k=t.toLowerCase().replace(/^'+|'+$/g,'');
-    return known.has(k)?`<span class="k">${esc(t)}</span>`:`<span class="c" onclick="wordAI(this.textContent)">${esc(t)}</span>`;
+    return known.has(k)?`<span class="k" onclick="wordInfo(this.textContent)">${esc(t)}</span>`:`<span class="c" onclick="wordInfo(this.textContent)">${esc(t)}</span>`;
   }).join('');
   translate(c).then(r=>{const el=$('#tr');if(el&&S.pendingEx===c)el.textContent=r||'(çeviri alınamadı)'});
 }
@@ -258,7 +253,7 @@ async function answer(d,delay=450){
   const w=S.cur; if(!w||S.answered)return;
   S.answered=true;
   if(S.waiting)revealArt();
-  const old=w.puan||0, np=old+d;
+  const np=(w.puan||0)+d;
   let bg=w.bes_gecme||0, bu=!!w.bes_ustunde_mi, yz=!!w.yazilmali;
   if(!bu&&np>=ORTA_UST)bu=true;
   if(bu&&np<ORTA_UST){bg++;bu=false;if(bg>=3)yz=true}
@@ -311,12 +306,11 @@ function mic(){
 }
 
 /* ── çeviri / sözlük ── */
-async function translate(text){
-  const key='tr_'+S.lang, c=S.trc[key]||(S.trc[key]=ls(key,{}));
+async function translate(text,lang=S.lang){
+  const key='tr_'+lang, c=S.trc[key]||(S.trc[key]=ls(key,{}));
   if(c[text])return c[text];
   try{
-    const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${S.lang}|az`);
-    const j=await r.json();
+    const j=await(await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${lang}|az`)).json();
     if(j.responseStatus===200){c[text]=j.responseData.translatedText;st(key,c);return c[text]}
   }catch{}
   return '';
@@ -343,8 +337,7 @@ async function loadDict(k){
       for(const v of [...new Set([q,q.toLowerCase(),q[0].toUpperCase()+q.slice(1)])]){
         const r=await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(v));
         if(!r.ok)continue;
-        const de=(await r.json()).de||[];
-        for(const g of de){
+        for(const g of (await r.json()).de||[]){
           html+=`<div class="pos">${esc(g.partOfSpeech)}</div>`;
           for(const d of g.definitions.slice(0,4)){
             html+=`<div class="d">— ${esc(strip(d.definition))}</div>`;
@@ -363,12 +356,10 @@ async function findArtikel(k){
   const t=temel(k);
   if(!t||/\s/.test(t)||!/^[A-ZÄÖÜ]/.test(t))return null;
   try{
-    const r=await fetch(`https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(t)}&prop=wikitext&format=json&redirects=1&origin=*`);
-    const txt=(await r.json()).parse?.wikitext?.['*']||'';
-    const m=txt.match(/==German==([\s\S]*?)(?=\n==[^=]|$)/), n=m&&m[1].match(/\{\{de-noun\|([^}]*)\}\}/);
+    const j=await(await fetch(`https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(t)}&prop=wikitext&format=json&redirects=1&origin=*`)).json();
+    const txt=j.parse?.wikitext?.['*']||'', m=txt.match(/==German==([\s\S]*?)(?=\n==[^=]|$)/), n=m&&m[1].match(/\{\{de-noun\|([^}]*)\}\}/);
     if(n){
-      const p=n[1].split('|'), g=(p.find(x=>x.startsWith('g='))||p[0]).replace(/^g=/,'');
-      const gs=[...new Set(g.match(/[mfn]/g)||[])];
+      const p=n[1].split('|'), g=(p.find(x=>x.startsWith('g='))||p[0]).replace(/^g=/,''), gs=[...new Set(g.match(/[mfn]/g)||[])];
       if(gs.length)return gs.map(x=>({m:'der',f:'die',n:'das'})[x]).join('/');
     }
   }catch{}
@@ -378,8 +369,7 @@ async function findArtikel(k){
 /* ── pencereler ── */
 function modal(html){const m=$('#modal');m.innerHTML=`<div class="sheet">${html}</div>`;m.classList.add('on')}
 function closeModal(){$('#modal').classList.remove('on')}
-function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
-
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
 function openDict(){
   if(!S.cur)return;
   modal(`<h3>📖 ${esc(S.cur.kelime)}<button onclick="closeModal()">✕</button></h3><div class="dict" id="dictBody">${S.dict||'<div class="empty">Yükleniyor…</div>'}</div>`);
@@ -392,8 +382,9 @@ function openSettings(){
     ${chk('srs','🔁 Aralıklı tekrar')}${chk('blur','Anlamı gizle (dokununca açılır)')}
     ${S.lang==='de'?chk('test','🎯 Artikel testi (1/2/3)'):''}
     <div class="opt"><span>Yazılmalı kelimeler</span><button onclick="openYaz()">✍️ Aç</button></div>
-    <div class="opt"><span>AI anahtarı (Gemini)</span><button onclick="openKey()">🔑</button></div>
     <div class="opt"><span>Yeni kelime</span><button onclick="openAdd()">➕ Ekle</button></div>
+    <div class="opt"><span>Excel'den toplu yükle</span><button onclick="openXls()">📥 Yükle</button></div>
+    <div class="opt"><span>AI anahtarı (Gemini)</span><button onclick="openKey()">🔑</button></div>
     <div class="opt"><span>Panodan çevir</span><button onclick="clipTr()">📋 Çevir</button></div>`);
 }
 function setOpt(k,v,reopen){
@@ -402,52 +393,144 @@ function setOpt(k,v,reopen){
   if(k==='srs'||k==='test'){if(k==='test'&&v&&!W().some(w=>artikeller(w.kelime).length)){S.set.test=false;applySet();toast('Artikelli kelime yok');return}show()}
   else if(k==='blur')show();
 }
+
+/* ── kelime ekle (otomatik doldurma, Enter, "kaydet ve yenisi") ── */
 function openAdd(k=''){
+  autoFill.k='';
   modal(`<h3>Kelime ekle · ${LANGS[S.lang].ad}<button onclick="closeModal()">✕</button></h3>
-    <label>Kelime${S.lang==='de'?' (ör. der Tisch)':''}</label><input id="aK" value="${esc(k)}">
-    <label>Karşılığı</label><div class="row"><input id="aM"><button onclick="addTr()">🌐 Çevir</button></div>
-    <label>Örnek cümle</label><div class="row"><input id="aE"><button onclick="addEx()">🔍</button></div>
-    <button class="save" onclick="addSave()">💾 Kaydet</button>`);
-  if(k)addEx(true);
+    <label>Kelime${S.lang==='de'?' (ör. der Tisch — artikel otomatik bulunur)':''}</label>
+    <input id="aK" value="${esc(k)}" autocomplete="off" onblur="autoFill()" onkeydown="if(event.key==='Enter'){event.preventDefault();autoFill()}">
+    <label>Karşılığı (boşsa otomatik çevrilir)</label><div class="row"><input id="aM" autocomplete="off"><button onclick="addTr()">🌐</button></div>
+    <label>Örnek cümle</label><div class="row"><input id="aE" autocomplete="off"><button onclick="addEx()">🔍</button></div>
+    <button class="save" onclick="addSave()">💾 Kaydet</button>
+    <button class="save sec" onclick="addSave(true)">💾 Kaydet ve yenisini ekle</button>`);
+  if(k)autoFill();else setTimeout(()=>$('#aK')?.focus(),60);
+}
+async function autoFill(){
+  const k=$('#aK')?.value.trim(); if(!k||autoFill.k===k)return; autoFill.k=k;
+  if(!$('#aM').value)addTr(); if(!$('#aE').value)addEx(true);
 }
 async function addTr(){
   const k=$('#aK').value.trim(); if(!k)return;
   $('#aM').value='⏳';
   const [art,tr]=await Promise.all([S.lang==='de'?findArtikel(k):null,translate(temel(k))]);
-  if(art&&$('#aK').value.trim()===k)$('#aK').value=art+' '+k;
-  $('#aM').value=tr; if(!tr)toast('Çeviri başarısız, tekrar dene');
+  if(art&&$('#aK').value.trim()===k){$('#aK').value=art+' '+k;autoFill.k=$('#aK').value}
+  $('#aM').value=tr; if(!tr)toast('Çeviri başarısız, kendin yaz');
 }
 async function addEx(silent){
   const k=$('#aK').value.trim(); if(!k)return;
   try{
     const q=temel(k);
     if(S.lang==='en'){
-      const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(q)), j=await r.json();
+      const j=await(await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(q))).json();
       const ex=j[0].meanings.flatMap(m=>m.definitions).find(d=>d.example)?.example;
       if(ex){$('#aE').value=ex;return}
     }else{
-      const r=await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(q)), j=await r.json();
+      const j=await(await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(q))).json();
       const ex=(j.de||[]).flatMap(g=>g.definitions).map(d=>(d.parsedExamples||[])[0]?.example).find(Boolean);
       if(ex){$('#aE').value=strip(ex);return}
     }
   }catch{}
   if(!silent)toast('Örnek bulunamadı, kendin yaz');
 }
-async function addSave(){
+async function addSave(again){
   const kelime=$('#aK').value.trim(), karsiligi=$('#aM').value.trim(), ornek=$('#aE').value.trim()||'Örnek yok';
   if(!kelime||!karsiligi||karsiligi==='⏳')return toast('Kelime ve karşılık zorunlu');
   const id=kelime.replace(/[\/\\]/g,'|'), data={kelime,karsiligi,ornek_cumle:ornek,puan:0,bes_gecme:0,bes_ustunde_mi:false,yazilmali:false,qrup:'Default'};
+  if(W().some(w=>w.id===id)&&!confirm('Bu kelime zaten var. Üzerine yazılsın mı? (puan sıfırlanır)'))return;
   try{
     await setDoc(doc(db,LANGS[S.lang].col,id),data);
     const i=W().findIndex(w=>w.id===id); if(i>=0)W()[i]={id,...data};else W().push({id,...data});
-    buildFilter();stats();closeModal();toast(`'${kelime}' eklendi`);
+    buildFilter();stats();toast(`'${kelime}' eklendi`);
+    if(again)openAdd();else closeModal();
     if(!S.cur)show();
   }catch(e){toast('Hata: '+e.message)}
 }
+
+/* ── düzenle / sil ── */
+function openEdit(){
+  const w=S.cur; if(!w)return;
+  modal(`<h3>✏️ ${esc(w.kelime)}<button onclick="closeModal()">✕</button></h3>
+    <label>Karşılığı</label><input id="eM" value="${esc(w.karsiligi)}">
+    <label>Örnek cümle</label><input id="eE" value="${esc(w.ornek_cumle==='Örnek yok'?'':w.ornek_cumle||'')}">
+    <button class="save" onclick="saveEdit()">💾 Kaydet</button>
+    <button class="save" style="background:var(--rd);color:#fff" onclick="closeModal();delWord()">🗑️ Kelimeyi sil</button>`);
+}
+async function saveEdit(){
+  const w=S.cur, m=$('#eM').value.trim(), e=$('#eE').value.trim()||'Örnek yok'; if(!m)return toast('Karşılık boş olamaz');
+  Object.assign(w,{karsiligi:m,ornek_cumle:e}); w.ai3='';
+  try{
+    await updateDoc(doc(db,LANGS[S.lang].col,w.id),{karsiligi:m,ornek_cumle:e,ai3:''});
+    closeModal();toast('Kaydedildi');
+    const me=$('#mean'); if(me)me.textContent=m;
+    S.pendingEx=e==='Örnek yok'?'':e; if(!S.waiting)showExample();
+  }catch(x){toast('Hata: '+x.message)}
+}
+async function delWord(){
+  const w=S.cur; if(!w)return;
+  if(!confirm(`'${w.kelime}' silinsin mi?`))return;
+  try{
+    await deleteDoc(doc(db,LANGS[S.lang].col,w.id));
+    S.words[S.lang]=W().filter(x=>x.id!==w.id);
+    S.cur=null; buildFilter(); toast('Silindi'); show();
+  }catch(e){toast('Hata: '+e.message)}
+}
+
+/* ── Excel'den yükle: A=kelime, B=karşılığı, C=örnek cümle ── */
+function loadXlsx(){
+  return window.XLSX?Promise.resolve():new Promise((ok,no)=>{
+    const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=ok;s.onerror=()=>no(new Error('Excel kütüphanesi yüklenemedi (internet?)'));document.head.appendChild(s);
+  });
+}
+function openXls(){
+  S.xr=[];
+  modal(`<h3>📥 Excel'den yükle<button onclick="closeModal()">✕</button></h3>
+    <div class="mini">A sütunu: öğrenilecek kelime · B sütunu: çevirisi · C sütunu: örnek cümle (.xlsx, .xls, .csv). İlk sayfa okunur, başlık satırı otomatik atlanır, aynı kelimeler tekrar eklenmez.</div>
+    <label>Hangi dile eklensin?</label>
+    <select id="xL"><option value="en" ${S.lang==='en'?'selected':''}>İngilizce</option><option value="de" ${S.lang==='de'?'selected':''}>Almanca</option></select>
+    <label>Grup adı (isteğe bağlı)</label><input id="xG" placeholder="Default">
+    <label>Dosya</label><input type="file" id="xF" accept=".xlsx,.xls,.csv" onchange="xlsPick(this.files[0])">
+    <div id="xI" class="mini" style="margin-top:.6rem"></div>
+    <button class="save" id="xB" onclick="xlsGo()" disabled>⬆️ Yükle</button>`);
+}
+async function xlsPick(f){
+  if(!f)return; $('#xI').textContent='⏳ Okunuyor…';
+  try{
+    await loadXlsx();
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    const r=rows.map(x=>[String(x[0]).trim(),String(x[1]).trim(),String(x[2]).trim()]).filter(x=>x[0]&&x[1]);
+    if(r.length&&/^(kelime|word|wort|almanca|ingilizce|german|english)/i.test(r[0][0]))r.shift();
+    S.xr=r; $('#xI').innerHTML=`✓ ${r.length} satır bulundu.<br>İlk satır: ${esc(r[0]?.join(' · ')||'—')}`; $('#xB').disabled=!r.length;
+  }catch(e){$('#xI').textContent='Hata: '+e.message}
+}
+async function xlsGo(){
+  const L=$('#xL').value, g=$('#xG').value.trim()||'Default', rows=S.xr; if(!rows.length)return;
+  $('#xB').disabled=true;
+  try{
+    if(!S.words[L])S.words[L]=(await getDocs(collection(db,LANGS[L].col))).docs.map(d=>({id:d.id,...d.data()}));
+    const have=new Set(S.words[L].map(w=>w.id)), seen=new Set(), add=[];
+    for(const [k,m,e] of rows){
+      const id=k.replace(/[\/\\]/g,'|');
+      if(id==='.'||id==='..'||have.has(id)||seen.has(id))continue;
+      seen.add(id);add.push({id,kelime:k,karsiligi:m,ornek_cumle:e||'Örnek yok',puan:0,bes_gecme:0,bes_ustunde_mi:false,yazilmali:false,qrup:g});
+    }
+    for(let i=0;i<add.length;i+=400){
+      $('#xI').textContent=`⏳ ${i}/${add.length}`;
+      const b=writeBatch(db); add.slice(i,i+400).forEach(({id,...d})=>b.set(doc(db,LANGS[L].col,id),d)); await b.commit();
+    }
+    S.words[L].push(...add);
+    closeModal();toast(`${LANGS[L].ad}: ${add.length} kelime eklendi, ${rows.length-add.length} tekrar atlandı`);
+    if(L===S.lang){buildFilter();if(S.cur)stats();else show()}else setLang(L);
+  }catch(e){$('#xI').textContent='Hata: '+e.message;$('#xB').disabled=false}
+}
+
+/* ── gruplar / yazılmalı / pano ── */
 function openGroup(){
   const w=S.cur; if(!w)return;
   modal(`<h3>🗂️ ${esc(w.kelime)}<button onclick="closeModal()">✕</button></h3>
-    <div style="color:var(--mu);font-size:.85rem">Mevcut grup: ${esc(w.qrup||'Default')}</div>
+    <div class="mini">Mevcut grup: ${esc(w.qrup||'Default')}</div>
     <label>Mevcut gruplardan seç</label><select id="gS"><option value="">—</option>${groups().map(g=>`<option ${w.qrup===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
     <label>veya yeni grup adı</label><input id="gN">
     <button class="save" onclick="saveGroup()">💾 Kaydet</button>`);
@@ -468,7 +551,7 @@ function copyYaz(){
   const t=W().filter(w=>w.yazilmali).map(w=>w.kelime).sort().join('\n');
   (navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Kopyalandı')).catch(()=>toast('Kopyalanamadı'));
 }
-async function unYaz(id){
+function unYaz(id){
   const w=W().find(x=>x.id===id); if(!w)return;
   w.yazilmali=false; updateDoc(doc(db,LANGS[S.lang].col,id),{yazilmali:false}).catch(()=>{});
   openYaz();buildFilter();
@@ -480,32 +563,30 @@ async function clipTr(){
   const r=await translate(t); $('#ct').textContent=r||'Çeviri başarısız';
 }
 
-/* ── kelime sil ── */
-async function delWord(){
-  const w=S.cur; if(!w)return;
-  if(!confirm(`'${w.kelime}' silinsin mi?`))return;
-  try{
-    await deleteDoc(doc(db,LANGS[S.lang].col,w.id));
-    S.words[S.lang]=W().filter(x=>x.id!==w.id);
-    S.cur=null; buildFilter(); toast('Silindi'); show();
-  }catch(e){toast('Hata: '+e.message)}
-}
-
-/* ── AI açıklama (Gemini, az token) ── */
-function openKey(){
+/* ── Gemini anahtarı (kodda anahtar YOK; sadece bu cihazda saklanır) ── */
+async function openKey(){
+  const k=await getKey(), u=ls('gusage',{});
   modal(`<h3>🔑 Gemini<button onclick="closeModal()">✕</button></h3>
-    <label>API anahtarı (boş bırakırsan koddaki varsayılan kullanılır)</label><input id="gk" value="${esc(ls('gkey',''))}">
-    <div style="color:var(--mu);font-size:.85rem;margin-top:.5rem">📊 Bugün (bu cihaz): ${(()=>{const u=ls('gusage',{});return u.d===new Date().toISOString().slice(0,10)?`${u.req} istek · ${u.tok} token`:'0 istek · 0 token'})()}<br>Kalan hak için: aistudio.google.com/usage</div>
-    <label>Model</label><input id="gm" value="${esc((ls('gmodel','')==='gemini-2.5-flash-lite'?'gemini-3.5-flash-lite':ls('gmodel','gemini-3.5-flash-lite')))}">
-    <button class="save" onclick="saveKey()">💾 Kaydet</button>`);
+    <div class="mini">Kayıtlı anahtar: <b>${k?esc(k.slice(0,4)+'…'+k.slice(-4)):'yok'}</b></div>
+    <label>Yeni API anahtarı (boş bırakırsan mevcut kalır)</label><input id="gk" placeholder="AIza…" autocomplete="off">
+    <div class="mini" style="margin-top:.5rem">📊 Bugün (bu cihaz): ${u.d===today()?`${u.req} istek · ${u.tok} token`:'0 istek · 0 token'}<br>Anahtarı asla koda yazma: herkese açık sayfadaki anahtarı Google otomatik iptal eder.</div>
+    <label>Model</label><input id="gm" value="${esc(ls('gmodel','')==='gemini-2.5-flash-lite'?'gemini-3.5-flash-lite':ls('gmodel','gemini-3.5-flash-lite'))}">
+    <button class="save" onclick="saveKey()">💾 Kaydet</button>
+    <button class="save sec" onclick="testKey()">🧪 Kaydet ve test et</button>`);
 }
-function saveKey(){st('gkey',$('#gk').value.trim());st('gmodel',$('#gm').value.trim()||'gemini-3.5-flash-lite');closeModal();toast('Kaydedildi')}
-
+async function saveKey(close=true){
+  const v=$('#gk').value.trim(); if(v){st('gkey',v);try{await idb.set('gkey',v)}catch{}}
+  st('gmodel',$('#gm').value.trim()||'gemini-3.5-flash-lite');
+  if(close){closeModal();toast('Kaydedildi')}
+}
+async function testKey(){
+  await saveKey(false);toast('⏳ Test ediliyor…');
+  try{await gem('Reply with OK',200);toast('✓ Anahtar çalışıyor')}catch(e){toast('✗ '+e.message)}
+}
 async function gem(prompt,max){
-  const sk=ls('gkey',''), key=(sk&&sk!==GKEY_OLD)?sk:GKEY_DEFAULT;
+  const key=await getKey();
   if(!key)throw new Error('Önce ⚙️ Ayarlar → 🔑 bölümüne Gemini anahtarını gir.');
-  const m=ls('gmodel','');
-  const model=(!m||m==='gemini-2.5-flash-lite')?'gemini-3.5-flash-lite':m;
+  const m=ls('gmodel',''), model=(!m||m==='gemini-2.5-flash-lite')?'gemini-3.5-flash-lite':m;
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
     body:JSON.stringify({systemInstruction:{parts:[{text:'Sen bir dil öğretmenisin. Cevabın TAMAMI Türkçe olmalı (sadece Almanca/İngilizce kelime ve örnekler orijinal dilde kalır). Never answer in English. Düz metin yaz, markdown kullanma.'}]},contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
@@ -514,14 +595,40 @@ async function gem(prompt,max){
   const t=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
   if(!t)throw new Error('Boş cevap');
   try{
-    const d=new Date().toISOString().slice(0,10), u=ls('gusage',{});
-    const x=u.d===d?u:{d,req:0,tok:0};
+    const u=ls('gusage',{}), x=u.d===today()?u:{d:today(),req:0,tok:0};
     x.req++; x.tok+=j.usageMetadata?.totalTokenCount||0; st('gusage',x);
-    toast(`🤖 ${j.usageMetadata?.totalTokenCount||'?'} token · bugün ${x.req} istek, ${x.tok} token`);
+    toast(`🤖 ${j.usageMetadata?.totalTokenCount||'?'} token · bugün ${x.req} istek`);
   }catch{}
   return t;
 }
 
+/* ── cümledeki kelimeye dokununca: ÖNCE ücretsiz çeviri, AI sadece butonla ── */
+async function wordInfo(t){
+  S.wq=t.replace(/^'+|'+$/g,'');
+  modal(`<h3>${esc(S.wq)}<button onclick="closeModal()">✕</button></h3>
+    <div id="wiB" style="font-size:1.3rem;margin:.6rem 0 1rem">⏳</div>
+    <div class="row"><button onclick="say(S.wq)">🔊</button><button onclick="wordAI(S.wq)">🤖 AI açıkla</button><button onclick="openAdd(S.wq)">➕ Ekle</button></div>`);
+  say(S.wq);
+  const r=await translate(S.wq.toLowerCase()), el=$('#wiB'); if(el)el.textContent=r||'Çeviri alınamadı';
+}
+async function wordAI(t){
+  const sent=S.pendingEx||'', key=`${S.lang}|${t.toLowerCase()}|${sent}`, c=ls('wai2',{}), body=()=>$('#waBody');
+  S.wq=t;
+  modal(`<h3>🤖 ${esc(t)}<button onclick="closeModal()">✕</button></h3>
+    <div id="waBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
+    <button onclick="openAdd(S.wq)" style="width:100%;margin-top:.8rem">➕ Veritabanına ekle</button>`);
+  if(c[key]){body().textContent=c[key];return}
+  const de=S.lang==='de', L=de?'German':'English';
+  const prompt=`${L} sentence: "${sent}"
+Explain the word "${t}" in Turkish, plain text, max 45 words: its Turkish meaning in THIS sentence; if it is an inflected form, give the base form (infinitive/singular) and why it changed (person, tense, case, plural, Partizip...)${de?'; if a noun, give article + plural':''}. Write in TURKISH.`;
+  try{
+    const r=await gem(prompt,400);
+    c[key]=r; const ks=Object.keys(c); if(ks.length>300)delete c[ks[0]];
+    st('wai2',c); if(body())body().textContent=r;
+  }catch(e){if(body())body().textContent='Hata: '+e.message}
+}
+
+/* ── kelime kartı için AI açıklama ── */
 function renderAI(t){
   const w=S.cur, el=$('#aiBody'); if(!el||!w)return;
   const m=t.match(/^Düzeltme:\s*(.+)$/m);
@@ -537,16 +644,13 @@ async function fixTr(){
   try{await updateDoc(doc(db,LANGS[S.lang].col,w.id),{karsiligi:w.karsiligi});toast('Çeviri güncellendi')}catch(e){toast('Hata: '+e.message)}
   renderAI(w.ai3||'');
 }
-
 async function aiExplain(force){
   const w=S.cur; if(!w)return;
-  const body=()=>$('#aiBody');
   modal(`<h3>🤖 ${esc(w.kelime)}<button onclick="closeModal()">✕</button></h3>
     <div id="aiBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
     <button onclick="aiExplain(true)" style="width:100%;margin-top:.8rem">🔄 Yenile</button>`);
   if(w.ai3&&force!==true){renderAI(w.ai3);return}
-  const ex=w.ornek_cumle&&w.ornek_cumle!=='Örnek yok'?w.ornek_cumle:'';
-  const de=S.lang==='de', L=de?'German':'English';
+  const ex=w.ornek_cumle&&w.ornek_cumle!=='Örnek yok'?w.ornek_cumle:'', de=S.lang==='de', L=de?'German':'English';
   const prompt=`${L} vocabulary card. Entry: "${w.kelime}" (given TR: ${w.karsiligi}).${ex?` Example sentence: "${ex}".`:''}
 Answer in Turkish, plain text, no markdown, max 80 words. Use only these lines, skip the ones that don't apply:
 Kök: ONLY if the entry is an inflected form (conjugated verb, plural, case, comparative, participle) or its spelling differs from the dictionary form: write the base form (${de?'infinitive / nominative singular':'infinitive / singular'}) and explain WHY it looks like this (person, tense, case, plural, stem-vowel change such as a→ä, etc.)
@@ -560,32 +664,15 @@ Write every line in TURKISH.`;
     const t=await gem(prompt,800);
     w.ai3=t; renderAI(t);
     updateDoc(doc(db,LANGS[S.lang].col,w.id),{ai3:t}).catch(()=>{});
-  }catch(e){if(body())body().textContent='Hata: '+e.message}
-}
-
-/* ── cümledeki bilinmeyen kelime için AI ── */
-async function wordAI(t){
-  const sent=S.pendingEx||'', key=`${S.lang}|${t.toLowerCase()}|${sent}`;
-  const c=ls('wai2',{}), body=()=>$('#waBody');
-  modal(`<h3>🤖 ${esc(t)}<button onclick="closeModal()">✕</button></h3>
-    <div id="waBody" style="line-height:1.7;white-space:pre-wrap">⏳</div>
-    <button onclick="openAdd(${JSON.stringify(t).replace(/"/g,'&quot;')})" style="width:100%;margin-top:.8rem">➕ Veritabanına ekle</button>`);
-  if(c[key]){body().textContent=c[key];return}
-  const de=S.lang==='de', L=de?'German':'English';
-  const prompt=`${L} sentence: "${sent}"
-Explain the word "${t}" in Turkish, plain text, max 45 words: its Turkish meaning in THIS sentence; if it is an inflected form, give the base form (infinitive/singular) and why it changed (person, tense, case, plural, Partizip...)${de?'; if a noun, give article + plural':''}. Write in TURKISH.`;
-  try{
-    const r=await gem(prompt,400);
-    c[key]=r; const ks=Object.keys(c); if(ks.length>300)delete c[ks[0]];
-    st('wai2',c); if(body())body().textContent=r;
-  }catch(e){if(body())body().textContent='Hata: '+e.message}
+  }catch(e){const b=$('#aiBody');if(b)b.textContent='Hata: '+e.message}
 }
 
 /* ── dil / filtre / yükleme ── */
 function setFilter(v){S.filter=v;show()}
 async function setLang(l){
-  S.lang=l;st('lang',l);S.filter='all';S.cur=null;S.waiting=false;applySet();
-  if(S.lang!=='de')S.set.test=false;
+  S.lang=l;st('lang',l);S.filter='all';S.cur=null;S.waiting=false;
+  if(l!=='de')S.set.test=false;
+  applySet();
   await load(l);
 }
 async function load(l){
@@ -593,8 +680,7 @@ async function load(l){
     $('#stats').textContent=`${LANGS[l].ad} kelimeleri yükleniyor…`;
     $('#main').innerHTML='<div class="card empty">Yükleniyor…</div>';
     try{
-      const snap=await getDocs(collection(db,LANGS[l].col));
-      S.words[l]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      S.words[l]=(await getDocs(collection(db,LANGS[l].col))).docs.map(d=>({id:d.id,...d.data()}));
     }catch(e){$('#stats').textContent='Firebase hatası: '+e.message;return}
   }
   if(S.lang!==l)return;
@@ -611,10 +697,11 @@ document.addEventListener('keydown',e=>{
   else if(k==='m'||k==='M')openGroup();
 });
 
-Object.assign(window,{setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,addTr,addEx,addSave,openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,delWord,aiExplain,wordAI,fixTr,openKey,saveKey,
+Object.assign(window,{S,$,setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,autoFill,addTr,addEx,addSave,openEdit,saveEdit,openXls,xlsPick,xlsGo,
+  openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,delWord,aiExplain,wordInfo,wordAI,fixTr,openKey,saveKey,testKey,
   unlock(){if($('#pw').value===PASS){st('auth',PASS);$('#lock').style.display='none';start()}else{$('#pwe').textContent='Şifre yanlış';$('#pw').value=''}}});
 
-function start(){applySet();load(S.lang)}
+function start(){applySet();try{navigator.storage?.persist?.()}catch{}load(S.lang)}
 if(ls('auth')===PASS)start();else{$('#lock').style.display='flex'}
 </script>
 </body>
