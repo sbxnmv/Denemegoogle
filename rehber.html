@@ -60,6 +60,9 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
 #lock{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;gap:.8rem;align-items:center;justify-content:center;z-index:100}
 #lock input{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.7rem;text-align:center;letter-spacing:.3rem;width:10rem}
 #lock .save{width:10rem;margin:0}
+#pl{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:.7rem .9rem calc(.7rem + env(safe-area-inset-bottom));z-index:40;display:flex;gap:.5rem;align-items:center}
+#pl .t{flex:1;min-width:0}#pl .t b{display:block;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#pl .t span{font-size:.8rem;color:var(--mu)}
+#pl button{width:2.6rem;height:2.6rem;padding:0;border-radius:50%;flex:none}
 </style>
 </head>
 <body>
@@ -384,6 +387,7 @@ function openSettings(){
     <div class="opt"><span>Yazılmalı kelimeler</span><button onclick="openYaz()">✍️ Aç</button></div>
     <div class="opt"><span>Yeni kelime</span><button onclick="openAdd()">➕ Ekle</button></div>
     <div class="opt"><span>Excel'den toplu yükle</span><button onclick="openXls()">📥 Yükle</button></div>
+    <div class="opt"><span>🎧 Yolda dinle modu</span><button onclick="startListen()">▶ Başlat</button></div>
     <div class="opt"><span>AI anahtarı (Gemini)</span><button onclick="openKey()">🔑</button></div>
     <div class="opt"><span>Panodan çevir</span><button onclick="clipTr()">📋 Çevir</button></div>`);
 }
@@ -687,6 +691,56 @@ async function load(l){
   buildFilter();show();
 }
 
+/* ── 🎧 Yolda dinle: kelime → 2 sn → anlam → sonraki. Tek <audio> ile çalar, ekran kapalıyken de müzik gibi devam eder ── */
+const L={a:new Audio(),on:false,list:[],i:0,segs:[],txt:[],seg:0,sil:null};
+const ttsUrl=(t,l)=>`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${l}&q=${encodeURIComponent(t.slice(0,180))}`;
+function silence(sec){
+  const sr=8000,n=sr*sec,b=new DataView(new ArrayBuffer(44+n)),w=(o,t)=>[...t].forEach((c,i)=>b.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);
+  b.setUint32(24,sr,true);b.setUint32(28,sr,true);b.setUint16(32,1,true);b.setUint16(34,8,true);w(36,'data');b.setUint32(40,n,true);
+  for(let i=0;i<n;i++)b.setUint8(44+i,128);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+}
+function startListen(){
+  const p=havuz(); if(!p.length)return toast('Bu filtrede kelime yok');
+  closeModal(); stopListen();
+  L.list=[...p].sort(()=>Math.random()-.5); L.i=0; L.on=true; L.sil=L.sil||silence(2);
+  L.a.onended=plNextSeg; L.a.onerror=()=>L.on&&plFallback();
+  if(!$('#pl')){document.body.insertAdjacentHTML('beforeend',`<div id="pl"><div class="t"><b id="plW"></b><span id="plM"></span></div>
+    <button onclick="plPrev()">⏮</button><button id="plP" onclick="plToggle()">⏸</button><button onclick="plNext()">⏭</button><button onclick="stopListen()">✕</button></div>`)}
+  document.body.style.paddingBottom='5rem';
+  try{const ms=navigator.mediaSession;[['play',()=>plToggle(true)],['pause',()=>plToggle(false)],['nexttrack',plNext],['previoustrack',plPrev]].forEach(([k,f])=>{try{ms.setActionHandler(k,f)}catch{}})}catch{}
+  toast('🎧 Başladı. Ekranı kapatabilirsin (internet gerekir)');
+  plLoad();
+}
+function plLoad(){
+  if(!L.on)return;
+  const w=L.list[L.i%L.list.length], wt=(w.kelime||'').replace(/\(.*?\)/g,' ').replace(/\s+/g,' ').trim(), mt=(w.karsiligi||'').replace(/[\/]/g,', ');
+  L.txt=[wt,null,mt,null]; L.segs=[ttsUrl(wt,S.lang),L.sil,ttsUrl(mt,'tr'),L.sil]; L.seg=0;
+  $('#plW').textContent=w.kelime; $('#plM').textContent=w.karsiligi;
+  try{navigator.mediaSession.metadata=new MediaMetadata({title:w.kelime,artist:w.karsiligi,album:'Yolda dinle · '+LANGS[S.lang].ad})}catch{}
+  plPlay();
+}
+function plPlay(){if(!L.on)return;L.a.src=L.segs[L.seg];L.a.play().catch(plFallback)}
+function plNextSeg(){if(!L.on)return;L.seg++;if(L.seg>=L.segs.length){L.i++;plLoad()}else plPlay()}
+function plFallback(){ /* Google sesi yüklenemezse tarayıcı sesine düş */
+  if(!L.on)return;
+  const t=L.txt[L.seg];
+  if(!t||!window.speechSynthesis)return void setTimeout(plNextSeg,2000);
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=L.seg===0?LANGS[S.lang].tts:'tr-TR';u.rate=.9;u.onend=plNextSeg;u.onerror=plNextSeg;speechSynthesis.speak(u);
+}
+function plToggle(play){
+  if(play===undefined)play=L.a.paused;
+  if(play)L.a.play().catch(plFallback);else{L.a.pause();speechSynthesis?.cancel()}
+  const b=$('#plP');if(b)b.textContent=play?'⏸':'▶';
+}
+function plNext(){L.i++;plLoad()}
+function plPrev(){L.i=Math.max(0,L.i-1);plLoad()}
+function stopListen(){
+  L.on=false;L.a.pause();L.a.removeAttribute('src');try{speechSynthesis?.cancel();navigator.mediaSession.metadata=null}catch{}
+  $('#pl')?.remove();document.body.style.paddingBottom='';
+}
+
 /* ── klavye ── */
 document.addEventListener('keydown',e=>{
   if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||$('#modal').classList.contains('on'))return;
@@ -697,7 +751,7 @@ document.addEventListener('keydown',e=>{
   else if(k==='m'||k==='M')openGroup();
 });
 
-Object.assign(window,{S,$,setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,autoFill,addTr,addEx,addSave,openEdit,saveEdit,openXls,xlsPick,xlsGo,
+Object.assign(window,{startListen,stopListen,plToggle,plNext,plPrev,S,$,setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,autoFill,addTr,addEx,addSave,openEdit,saveEdit,openXls,xlsPick,xlsGo,
   openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,delWord,aiExplain,wordInfo,wordAI,fixTr,openKey,saveKey,testKey,
   unlock(){if($('#pw').value===PASS){st('auth',PASS);$('#lock').style.display='none';start()}else{$('#pwe').textContent='Şifre yanlış';$('#pw').value=''}}});
 
