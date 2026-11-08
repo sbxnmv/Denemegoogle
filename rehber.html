@@ -765,17 +765,24 @@ function plSpeak(){
   const t=L.txt[L.seg], lang=L.seg?'tr':S.lang, v=L.v, q=encodeURIComponent(t.slice(0,180)); let done=false;
   const next=()=>{if(done)return;done=true;clearTimeout(L.g);L.t=setTimeout(()=>{if(!L.on||L.paused)return;L.seg++;if(L.seg>=2){L.i++;plLoad()}else plSpeak()},2000)};
   /* 3) son çare: tarayıcı sesi (cancel'dan hemen sonra speak() sessiz kalıyordu → 300 ms bekle, nesneyi sakla) */
-  const speech=why=>{
+  const speech=()=>{
     if(done)return;clearTimeout(L.g);
     if(!window.speechSynthesis){dbg('⚠️ Bu tarayıcıda ses yok');return next()}
-    const tl=L.seg?'tr-TR':LANGS[S.lang].tts, u=new SpeechSynthesisUtterance(t); L.u=u; u.lang=tl; u.rate=.9; u.volume=1;
-    const vo=speechSynthesis.getVoices().find(x=>x.lang.replace('_','-').toLowerCase().startsWith(tl.slice(0,2))); if(vo)u.voice=vo;
-    let started=false;
-    u.onstart=()=>{started=true;dbg('🔊 tarayıcı sesi')};
-    u.onend=next; u.onerror=e=>{dbg('⚠️ tarayıcı sesi hatası: '+(e.error||'?'));next()};
-    speechSynthesis.cancel();
-    setTimeout(()=>{if(done)return;speechSynthesis.resume();speechSynthesis.speak(u)},300);
-    L.g=setTimeout(()=>{if(!started){dbg('⚠️ Ses başlamadı. Telefon ayarları → Metin okuma → '+(L.seg?'Türkçe':LANGS[S.lang].ad)+' ses paketi yüklü mü?');next()}},6000);
+    const tl=L.seg?'tr-TR':LANGS[S.lang].tts; let started=false;
+    const go=n=>{ /* ana 🔊 butonu gibi: ses (voice) seçmeden, sadece dil ver. Hata olursa bir kez daha dene */
+      const u=new SpeechSynthesisUtterance(t); L.u=u; u.lang=tl; if(n===0)u.rate=.9;
+      u.onstart=()=>{started=true;dbg('🔊 tarayıcı sesi')};
+      u.onend=next;
+      u.onerror=e=>{
+        if(e.error==='canceled'||e.error==='interrupted')return;
+        if(n<2){dbg('↻ ses hatası ('+e.error+'), tekrar deniyorum…');speechSynthesis.cancel();setTimeout(()=>{if(!done)go(n+1)},500)}
+        else{dbg('⚠️ Telefon sesi okuyamadı ('+e.error+'). Ayarlar → Metin okuma → '+(L.seg?'Türkçe':LANGS[S.lang].ad)+' ses paketini indir');next()}
+      };
+      speechSynthesis.cancel();
+      setTimeout(()=>{if(done)return;speechSynthesis.resume();speechSynthesis.speak(u)},300);
+    };
+    go(0);
+    L.g=setTimeout(()=>{if(!started){dbg('⚠️ Ses başlamadı (telefon ses motoru yanıt vermiyor)');next()}},9000);
   };
   /* 2) Google ses adresleri */
   const urls=[`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=${q}`,`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`];
