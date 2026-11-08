@@ -695,12 +695,12 @@ async function load(l){
    K: uzun sessiz ses döngüsü → Chrome/Android bunu "müzik" sayar, bildirimde kontroller çıkar, ekran kapanınca sayfa uyumaz.
    V: kelime ve anlam sesleri (Google ses servisi; olmazsa tarayıcı sesi). Kelime → 2 sn → anlam → 2 sn → sonraki. ── */
 const L={k:new Audio(),v:new Audio(),on:false,paused:false,list:[],i:0,seg:0,txt:[],t:null,g:null,sil:null};
-const ttsUrl=(t,l)=>`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${l}&q=${encodeURIComponent(t.slice(0,180))}`;
+const ttsUrl=(t,l)=>`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${l}&q=${encodeURIComponent(t.slice(0,180))}`;
 function silence(sec){
   const sr=8000,n=sr*sec,b=new DataView(new ArrayBuffer(44+n)),w=(o,t)=>[...t].forEach((c,i)=>b.setUint8(o+i,c.charCodeAt(0)));
   w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);
   b.setUint32(24,sr,true);b.setUint32(28,sr,true);b.setUint16(32,1,true);b.setUint16(34,8,true);w(36,'data');b.setUint32(40,n,true);
-  for(let i=0;i<n;i++)b.setUint8(44+i,128+(i%2));
+  for(let i=0;i<n;i++)b.setUint8(44+i,128);
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
 }
 function plState(p){try{navigator.mediaSession.playbackState=p?'playing':'paused'}catch{}const b=$('#plP');if(b)b.textContent=p?'⏸':'▶'}
@@ -710,7 +710,7 @@ function startListen(){
   L.list=[...p].sort(()=>Math.random()-.5); L.i=0; L.on=true; L.paused=false; L.sil=L.sil||silence(12);
   L.k.src=L.sil; L.k.loop=true; L.k.play().catch(()=>toast('Ses başlatılamadı, tekrar dene'));
   L.v.src=L.sil; L.v.play().then(()=>L.v.pause()).catch(()=>{}); /* iOS için ses kanalını bu dokunuşta aç */
-  if(!$('#pl')){document.body.insertAdjacentHTML('beforeend',`<div id="pl"><div class="t"><b id="plW"></b><span id="plM"></span></div>
+  if(!$('#pl')){document.body.insertAdjacentHTML('beforeend',`<div id="pl"><div class="t"><b id="plW"></b><span id="plM"></span><span id="plD" style="display:block;color:var(--or);font-size:.7rem"></span></div>
     <button onclick="plPrev()">⏮</button><button id="plP" onclick="plToggle()">⏸</button><button onclick="plNext()">⏭</button><button onclick="stopListen()">✕</button></div>`)}
   document.body.style.paddingBottom='5rem';
   try{const ms=navigator.mediaSession;[['play',()=>plToggle(true)],['pause',()=>plToggle(false)],['nexttrack',plNext],['previoustrack',plPrev],['stop',stopListen]].forEach(([k,f])=>{try{ms.setActionHandler(k,f)}catch{}})}catch{}
@@ -724,19 +724,25 @@ function plLoad(){
   try{navigator.mediaSession.metadata=new MediaMetadata({title:w.kelime,artist:w.karsiligi,album:'Yolda dinle · '+LANGS[S.lang].ad})}catch{}
   plState(true); plSpeak();
 }
+const dbg=t=>{const e=$('#plD');if(e)e.textContent=t};
 function plSpeak(){
   if(!L.on||L.paused)return;
   clearTimeout(L.t);clearTimeout(L.g);speechSynthesis?.cancel();
   const t=L.txt[L.seg], lang=L.seg?'tr':S.lang, v=L.v; let done=false, fb=false;
   const next=()=>{if(done)return;done=true;clearTimeout(L.g);L.t=setTimeout(()=>{if(!L.on||L.paused)return;L.seg++;if(L.seg>=2){L.i++;plLoad()}else plSpeak()},2000)};
-  const fall=()=>{
+  const fall=why=>{
     if(done||fb)return;fb=true;
-    if(!window.speechSynthesis)return next();
-    const u=new SpeechSynthesisUtterance(t);u.lang=L.seg?'tr-TR':LANGS[S.lang].tts;u.rate=.9;u.onend=next;u.onerror=next;speechSynthesis.speak(u);
+    if(!window.speechSynthesis){dbg('⚠️ Ses yok: '+why);return next()}
+    const tl=L.seg?'tr-TR':LANGS[S.lang].tts, u=new SpeechSynthesisUtterance(t);u.lang=tl;u.rate=.9;
+    const vo=speechSynthesis.getVoices().find(x=>x.lang.replace('_','-').toLowerCase().startsWith(tl.slice(0,2)));if(vo)u.voice=vo;
+    u.onstart=()=>dbg('🔊 tarayıcı sesi (Google: '+why+')');
+    u.onend=next;u.onerror=e=>{dbg('⚠️ Ses hatası: '+(e.error||'?')+' · Google: '+why);next()};
+    L.g=setTimeout(next,8000);
+    speechSynthesis.speak(u);
   };
-  v.onended=next; v.onerror=fall;
-  v.src=ttsUrl(t,lang); v.play().catch(fall);
-  L.g=setTimeout(()=>{if(!done&&!fb)fall()},6000);
+  v.onended=next; v.onplaying=()=>dbg('🔊 Google sesi'); v.onerror=()=>fall('hata '+(v.error?.code||'?'));
+  v.src=ttsUrl(t,lang); v.play().catch(e=>fall(e.name));
+  L.g=setTimeout(()=>{if(!done&&!fb)fall('zaman aşımı')},5000);
 }
 function plToggle(play){
   if(!L.on)return;
