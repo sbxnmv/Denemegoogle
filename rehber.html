@@ -691,53 +691,66 @@ async function load(l){
   buildFilter();show();
 }
 
-/* ── 🎧 Yolda dinle: kelime → 2 sn → anlam → sonraki. Tek <audio> ile çalar, ekran kapalıyken de müzik gibi devam eder ── */
-const L={a:new Audio(),on:false,list:[],i:0,segs:[],txt:[],seg:0,sil:null};
+/* ── 🎧 Yolda dinle ──
+   K: uzun sessiz ses döngüsü → Chrome/Android bunu "müzik" sayar, bildirimde kontroller çıkar, ekran kapanınca sayfa uyumaz.
+   V: kelime ve anlam sesleri (Google ses servisi; olmazsa tarayıcı sesi). Kelime → 2 sn → anlam → 2 sn → sonraki. ── */
+const L={k:new Audio(),v:new Audio(),on:false,paused:false,list:[],i:0,seg:0,txt:[],t:null,g:null,sil:null};
 const ttsUrl=(t,l)=>`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${l}&q=${encodeURIComponent(t.slice(0,180))}`;
 function silence(sec){
   const sr=8000,n=sr*sec,b=new DataView(new ArrayBuffer(44+n)),w=(o,t)=>[...t].forEach((c,i)=>b.setUint8(o+i,c.charCodeAt(0)));
   w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);
   b.setUint32(24,sr,true);b.setUint32(28,sr,true);b.setUint16(32,1,true);b.setUint16(34,8,true);w(36,'data');b.setUint32(40,n,true);
-  for(let i=0;i<n;i++)b.setUint8(44+i,128);
+  for(let i=0;i<n;i++)b.setUint8(44+i,128+(i%2));
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
 }
+function plState(p){try{navigator.mediaSession.playbackState=p?'playing':'paused'}catch{}const b=$('#plP');if(b)b.textContent=p?'⏸':'▶'}
 function startListen(){
   const p=havuz(); if(!p.length)return toast('Bu filtrede kelime yok');
   closeModal(); stopListen();
-  L.list=[...p].sort(()=>Math.random()-.5); L.i=0; L.on=true; L.sil=L.sil||silence(2);
-  L.a.onended=plNextSeg; L.a.onerror=()=>L.on&&plFallback();
+  L.list=[...p].sort(()=>Math.random()-.5); L.i=0; L.on=true; L.paused=false; L.sil=L.sil||silence(12);
+  L.k.src=L.sil; L.k.loop=true; L.k.play().catch(()=>toast('Ses başlatılamadı, tekrar dene'));
+  L.v.src=L.sil; L.v.play().then(()=>L.v.pause()).catch(()=>{}); /* iOS için ses kanalını bu dokunuşta aç */
   if(!$('#pl')){document.body.insertAdjacentHTML('beforeend',`<div id="pl"><div class="t"><b id="plW"></b><span id="plM"></span></div>
     <button onclick="plPrev()">⏮</button><button id="plP" onclick="plToggle()">⏸</button><button onclick="plNext()">⏭</button><button onclick="stopListen()">✕</button></div>`)}
   document.body.style.paddingBottom='5rem';
-  try{const ms=navigator.mediaSession;[['play',()=>plToggle(true)],['pause',()=>plToggle(false)],['nexttrack',plNext],['previoustrack',plPrev]].forEach(([k,f])=>{try{ms.setActionHandler(k,f)}catch{}})}catch{}
-  toast('🎧 Başladı. Ekranı kapatabilirsin (internet gerekir)');
+  try{const ms=navigator.mediaSession;[['play',()=>plToggle(true)],['pause',()=>plToggle(false)],['nexttrack',plNext],['previoustrack',plPrev],['stop',stopListen]].forEach(([k,f])=>{try{ms.setActionHandler(k,f)}catch{}})}catch{}
   plLoad();
 }
 function plLoad(){
   if(!L.on)return;
   const w=L.list[L.i%L.list.length], wt=(w.kelime||'').replace(/\(.*?\)/g,' ').replace(/\s+/g,' ').trim(), mt=(w.karsiligi||'').replace(/[\/]/g,', ');
-  L.txt=[wt,null,mt,null]; L.segs=[ttsUrl(wt,S.lang),L.sil,ttsUrl(mt,'tr'),L.sil]; L.seg=0;
+  L.txt=[wt,mt]; L.seg=0;
   $('#plW').textContent=w.kelime; $('#plM').textContent=w.karsiligi;
   try{navigator.mediaSession.metadata=new MediaMetadata({title:w.kelime,artist:w.karsiligi,album:'Yolda dinle · '+LANGS[S.lang].ad})}catch{}
-  plPlay();
+  plState(true); plSpeak();
 }
-function plPlay(){if(!L.on)return;L.a.src=L.segs[L.seg];L.a.play().catch(plFallback)}
-function plNextSeg(){if(!L.on)return;L.seg++;if(L.seg>=L.segs.length){L.i++;plLoad()}else plPlay()}
-function plFallback(){ /* Google sesi yüklenemezse tarayıcı sesine düş */
-  if(!L.on)return;
-  const t=L.txt[L.seg];
-  if(!t||!window.speechSynthesis)return void setTimeout(plNextSeg,2000);
-  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=L.seg===0?LANGS[S.lang].tts:'tr-TR';u.rate=.9;u.onend=plNextSeg;u.onerror=plNextSeg;speechSynthesis.speak(u);
+function plSpeak(){
+  if(!L.on||L.paused)return;
+  clearTimeout(L.t);clearTimeout(L.g);speechSynthesis?.cancel();
+  const t=L.txt[L.seg], lang=L.seg?'tr':S.lang, v=L.v; let done=false, fb=false;
+  const next=()=>{if(done)return;done=true;clearTimeout(L.g);L.t=setTimeout(()=>{if(!L.on||L.paused)return;L.seg++;if(L.seg>=2){L.i++;plLoad()}else plSpeak()},2000)};
+  const fall=()=>{
+    if(done||fb)return;fb=true;
+    if(!window.speechSynthesis)return next();
+    const u=new SpeechSynthesisUtterance(t);u.lang=L.seg?'tr-TR':LANGS[S.lang].tts;u.rate=.9;u.onend=next;u.onerror=next;speechSynthesis.speak(u);
+  };
+  v.onended=next; v.onerror=fall;
+  v.src=ttsUrl(t,lang); v.play().catch(fall);
+  L.g=setTimeout(()=>{if(!done&&!fb)fall()},6000);
 }
 function plToggle(play){
-  if(play===undefined)play=L.a.paused;
-  if(play)L.a.play().catch(plFallback);else{L.a.pause();speechSynthesis?.cancel()}
-  const b=$('#plP');if(b)b.textContent=play?'⏸':'▶';
+  if(!L.on)return;
+  if(play===undefined)play=L.paused;
+  L.paused=!play;
+  if(play){L.k.play().catch(()=>{});plState(true);plSpeak()}
+  else{clearTimeout(L.t);clearTimeout(L.g);L.v.pause();L.k.pause();speechSynthesis?.cancel();plState(false)}
 }
-function plNext(){L.i++;plLoad()}
-function plPrev(){L.i=Math.max(0,L.i-1);plLoad()}
+function plNext(){if(!L.on)return;L.i++;if(L.paused)L.paused=false,L.k.play().catch(()=>{});plLoad()}
+function plPrev(){if(!L.on)return;L.i=Math.max(0,L.i-1);if(L.paused)L.paused=false,L.k.play().catch(()=>{});plLoad()}
 function stopListen(){
-  L.on=false;L.a.pause();L.a.removeAttribute('src');try{speechSynthesis?.cancel();navigator.mediaSession.metadata=null}catch{}
+  L.on=false;clearTimeout(L.t);clearTimeout(L.g);
+  for(const a of [L.k,L.v]){a.onended=a.onerror=null;a.pause();a.removeAttribute('src')}
+  try{speechSynthesis?.cancel();navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none'}catch{}
   $('#pl')?.remove();document.body.style.paddingBottom='';
 }
 
