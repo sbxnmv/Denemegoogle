@@ -248,7 +248,13 @@ function showExample(){
     const k=t.toLowerCase().replace(/^'+|'+$/g,'');
     return known.has(k)?`<span class="k" onclick="wordInfo(this.textContent)">${esc(t)}</span>`:`<span class="c" onclick="wordInfo(this.textContent)">${esc(t)}</span>`;
   }).join('');
-  translate(c).then(r=>{const el=$('#tr');if(el&&S.pendingEx===c)el.textContent=r||'(çeviri alınamadı)'});
+  const w0=S.cur;
+  const pr=S.lang==='de'
+    ? (w0?.cumle_tr?Promise.resolve(w0.cumle_tr):deTr('s',c).then(r=>{
+        if(r&&w0){w0.cumle_tr=r;updateDoc(doc(db,LANGS.de.col,w0.id),{cumle_tr:r}).catch(()=>{})}
+        return r}))
+    : translate(c);
+  pr.then(r=>{const el=$('#tr');if(el&&S.pendingEx===c)el.textContent=r||'(çeviri alınamadı)'});
 }
 
 /* ── cevap ── */
@@ -306,6 +312,25 @@ function mic(){
   r.onerror=e=>{$('#spk').textContent='Hata: '+e.error};
   r.onend=()=>{if($('#spk')?.textContent.startsWith('🎤'))$('#spk').textContent='Ses algılanamadı'};
   r.start();
+}
+
+/* ── Almanca→Türkçe (Gemini, bağlama göre, önbellekli) ── */
+const SYS_TR='Almanca→Türkçe çevirmensin. Sadece istenen çıktıyı yaz, açıklama ekleme. Türkçe yaz (Azerbaycanca DEĞİL).';
+const kc=r=>({k:(r.match(/^K:\s*(.+)$/m)||[])[1]?.trim()||r.split('\n')[0].replace(/^K:\s*/,'').trim(),c:(r.match(/^C:\s*(.+)$/m)||[])[1]?.trim()||''});
+async function deTr(kind,a,b=''){
+  const c=S.trc.g||(S.trc.g=ls('trg',{})), key=kind+'|'+a+'|'+b;
+  if(c[key])return c[key];
+  const P={
+    w:b?`Almanca cümle: "${b}"\nKelime: "${a}"\nBu kelimenin BU cümlede kullanılan anlamının Türkçesi (çekimli veya ayrılabilir önekli ise cümledeki işleviyle). Sadece 1-3 kelime.`
+       :`Almanca: "${a}"\nEn yaygın Türkçe karşılığı. Sadece 1-3 kelime.`,
+    s:`Almanca cümleyi doğal Türkçeye çevir. Sadece çeviri:\n${a}`,
+    ws:`Almanca kelime: "${a}"\nÖrnek cümle: "${b}"\nTam iki satır yaz:\nK: kelimenin bu cümledeki Türkçe anlamı (1-3 kelime; cümlede kelime geçmiyorsa en yaygın anlamı)\nC: cümlenin doğal Türkçe çevirisi`
+  }[kind];
+  try{
+    const r=await gem(P,kind==='w'?80:400,SYS_TR);
+    c[key]=r; const ks=Object.keys(c); if(ks.length>1500)delete c[ks[0]];
+    st('trg',c); return r;
+  }catch(e){toast('Çeviri hatası: '+e.message);return ''}
 }
 
 /* ── çeviri / sözlük ── */
@@ -401,7 +426,7 @@ function setOpt(k,v,reopen){
 
 /* ── kelime ekle (otomatik doldurma, Enter, "kaydet ve yenisi") ── */
 function openAdd(k=''){
-  autoFill.k='';
+  autoFill.k='';S.addC=null;
   modal(`<h3>Kelime ekle · ${LANGS[S.lang].ad}<button onclick="closeModal()">✕</button></h3>
     <label>Kelime${S.lang==='de'?' (ör. der Tisch — artikel otomatik bulunur)':''}</label>
     <input id="aK" value="${esc(k)}" autocomplete="off" onblur="autoFill()" onkeydown="if(event.key==='Enter'){event.preventDefault();autoFill()}">
@@ -413,13 +438,21 @@ function openAdd(k=''){
 }
 async function autoFill(){
   const k=$('#aK')?.value.trim(); if(!k||autoFill.k===k)return; autoFill.k=k;
+  if(S.lang==='de'){if(!$('#aE').value)await addEx(true);if(!$('#aM').value)addTr();return}
   if(!$('#aM').value)addTr(); if(!$('#aE').value)addEx(true);
 }
 async function addTr(){
   const k=$('#aK').value.trim(); if(!k)return;
   $('#aM').value='⏳';
-  const [art,tr]=await Promise.all([S.lang==='de'?findArtikel(k):null,translate(temel(k))]);
-  if(art&&$('#aK').value.trim()===k){$('#aK').value=art+' '+k;autoFill.k=$('#aK').value}
+  let tr='';
+  if(S.lang==='de'){
+    const e=$('#aE').value.trim(), t=temel(k);
+    const [art,r]=await Promise.all([findArtikel(k),e?deTr('ws',t,e):deTr('w',t)]);
+    if(art&&$('#aK').value.trim()===k){$('#aK').value=art+' '+k;autoFill.k=$('#aK').value}
+    if(e){const p=kc(r);tr=p.k;S.addC=p.c?{e,c:p.c}:null}else tr=r;
+  }else{
+    tr=await translate(temel(k));
+  }
   $('#aM').value=tr; if(!tr)toast('Çeviri başarısız, kendin yaz');
 }
 async function addEx(silent){
@@ -441,7 +474,8 @@ async function addEx(silent){
 async function addSave(again){
   const kelime=$('#aK').value.trim(), karsiligi=$('#aM').value.trim(), ornek=$('#aE').value.trim()||'Örnek yok';
   if(!kelime||!karsiligi||karsiligi==='⏳')return toast('Kelime ve karşılık zorunlu');
-  const id=kelime.replace(/[\/\\]/g,'|'), data={kelime,karsiligi,ornek_cumle:ornek,puan:0,bes_gecme:0,bes_ustunde_mi:false,yazilmali:false,qrup:'Default'};
+  const id=kelime.replace(/[\/\\]/g,'|'), data={kelime,karsiligi,ornek_cumle:ornek,puan:0,bes_gecme:0,bes_ustunde_mi:false,yazilmali:false,qrup:'Default',
+    ...(S.lang==='de'&&S.addC&&S.addC.e===ornek?{cumle_tr:S.addC.c}:{})};
   if(W().some(w=>w.id===id)&&!confirm('Bu kelime zaten var. Üzerine yazılsın mı? (puan sıfırlanır)'))return;
   try{
     await setDoc(doc(db,LANGS[S.lang].col,id),data);
@@ -455,17 +489,25 @@ async function addSave(again){
 /* ── düzenle / sil ── */
 function openEdit(){
   const w=S.cur; if(!w)return;
+  S.editC=null;
   modal(`<h3>✏️ ${esc(w.kelime)}<button onclick="closeModal()">✕</button></h3>
-    <label>Karşılığı</label><input id="eM" value="${esc(w.karsiligi)}">
+    <label>Karşılığı</label><div class="row"><input id="eM" value="${esc(w.karsiligi)}">${S.lang==='de'?'<button onclick="editTr()">🌐</button>':''}</div>
     <label>Örnek cümle</label><input id="eE" value="${esc(w.ornek_cumle==='Örnek yok'?'':w.ornek_cumle||'')}">
     <button class="save" onclick="saveEdit()">💾 Kaydet</button>
     <button class="save" style="background:var(--rd);color:#fff" onclick="closeModal();delWord()">🗑️ Kelimeyi sil</button>`);
 }
+async function editTr(){
+  const w=S.cur,e=$('#eE').value.trim(),t=temel(w.kelime);
+  $('#eM').value='⏳';
+  if(e){const p=kc(await deTr('ws',t,e));$('#eM').value=p.k;S.editC=p.c?{e,c:p.c}:null}
+  else $('#eM').value=await deTr('w',t);
+}
 async function saveEdit(){
-  const w=S.cur, m=$('#eM').value.trim(), e=$('#eE').value.trim()||'Örnek yok'; if(!m)return toast('Karşılık boş olamaz');
-  Object.assign(w,{karsiligi:m,ornek_cumle:e}); w.ai3='';
+  const w=S.cur, m=$('#eM').value.trim(), e=$('#eE').value.trim()||'Örnek yok'; if(!m||m==='⏳')return toast('Karşılık boş olamaz');
+  const ct=(S.lang==='de'&&S.editC&&S.editC.e===e)?S.editC.c:'';
+  Object.assign(w,{karsiligi:m,ornek_cumle:e,cumle_tr:ct}); w.ai3='';
   try{
-    await updateDoc(doc(db,LANGS[S.lang].col,w.id),{karsiligi:m,ornek_cumle:e,ai3:''});
+    await updateDoc(doc(db,LANGS[S.lang].col,w.id),{karsiligi:m,ornek_cumle:e,ai3:'',cumle_tr:ct});
     closeModal();toast('Kaydedildi');
     const me=$('#mean'); if(me)me.textContent=m;
     S.pendingEx=e==='Örnek yok'?'':e; if(!S.waiting)showExample();
@@ -565,7 +607,7 @@ async function clipTr(){
   let t='';try{t=(await navigator.clipboard.readText()).trim()}catch{}
   if(!t)return toast('Pano boş veya okunamadı');
   modal(`<h3>Pano çevirisi<button onclick="closeModal()">✕</button></h3><p>${esc(t)}</p><hr style="border-color:var(--bd);margin:.8rem 0"><p id="ct" style="color:var(--ac)">⏳</p>`);
-  const r=await translate(t); $('#ct').textContent=r||'Çeviri başarısız';
+  const r=S.lang==='de'?await deTr('s',t):await translate(t); $('#ct').textContent=r||'Çeviri başarısız';
 }
 
 /* ── Gemini anahtarı (kodda anahtar YOK; sadece bu cihazda saklanır) ── */
@@ -588,13 +630,13 @@ async function testKey(){
   await saveKey(false);toast('⏳ Test ediliyor…');
   try{await gem('Reply with OK',200);toast('✓ Anahtar çalışıyor')}catch(e){toast('✗ '+e.message)}
 }
-async function gem(prompt,max){
+async function gem(prompt,max,sys){
   const key=await getKey();
   if(!key)throw new Error('Önce ⚙️ Ayarlar → 🔑 bölümüne Gemini anahtarını gir.');
   const m=ls('gmodel',''), model=(!m||m==='gemini-2.5-flash-lite')?'gemini-3.5-flash-lite':m;
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
-    body:JSON.stringify({systemInstruction:{parts:[{text:'Sen bir dil öğretmenisin. Cevabın TAMAMI Türkçe olmalı (sadece Almanca/İngilizce kelime ve örnekler orijinal dilde kalır). Never answer in English. Düz metin yaz, markdown kullanma.'}]},contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
+    body:JSON.stringify({systemInstruction:{parts:[{text:sys||'Sen bir dil öğretmenisin. Cevabın TAMAMI Türkçe olmalı (sadece Almanca/İngilizce kelime ve örnekler orijinal dilde kalır). Never answer in English. Düz metin yaz, markdown kullanma.'}]},contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
   const j=await r.json();
   if(!r.ok)throw new Error(j.error?.message||r.status);
   const t=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
@@ -602,7 +644,7 @@ async function gem(prompt,max){
   try{
     const u=ls('gusage',{}), x=u.d===today()?u:{d:today(),req:0,tok:0};
     x.req++; x.tok+=j.usageMetadata?.totalTokenCount||0; st('gusage',x);
-    toast(`🤖 ${j.usageMetadata?.totalTokenCount||'?'} token · bugün ${x.req} istek`);
+    if(!sys)toast(`🤖 ${j.usageMetadata?.totalTokenCount||'?'} token · bugün ${x.req} istek`);
   }catch{}
   return t;
 }
@@ -614,7 +656,8 @@ async function wordInfo(t){
     <div id="wiB" style="font-size:1.3rem;margin:.6rem 0 1rem">⏳</div>
     <div class="row"><button onclick="say(S.wq)">🔊</button><button onclick="wordAI(S.wq)">🤖 AI açıkla</button><button onclick="openAdd(S.wq)">➕ Ekle</button></div>`);
   say(S.wq);
-  const r=await translate(S.wq.toLowerCase()), el=$('#wiB'); if(el)el.textContent=r||'Çeviri alınamadı';
+  const r=S.lang==='de'?await deTr('w',S.wq,S.pendingEx||''):await translate(S.wq.toLowerCase());
+  const el=$('#wiB'); if(el)el.textContent=r||'Çeviri alınamadı';
 }
 async function wordAI(t){
   const sent=S.pendingEx||'', key=`${S.lang}|${t.toLowerCase()}|${sent}`, c=ls('wai2',{}), body=()=>$('#waBody');
@@ -831,7 +874,7 @@ document.addEventListener('keydown',e=>{
 });
 
 Object.assign(window,{startListen,stopListen,plToggle,plNext,plPrev,S,$,setLang,setFilter,show,say,mic,answer,pickArt,openDict,openSettings,setOpt,openAdd,autoFill,addTr,addEx,addSave,openEdit,saveEdit,openXls,xlsPick,xlsGo,
-  openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,delWord,aiExplain,wordInfo,wordAI,fixTr,openKey,saveKey,testKey,
+  openGroup,saveGroup,openYaz,copyYaz,unYaz,clipTr,closeModal,delWord,aiExplain,wordInfo,wordAI,fixTr,openKey,saveKey,testKey,editTr,
   unlock(){if($('#pw').value===PASS){st('auth',PASS);$('#lock').style.display='none';start()}else{$('#pwe').textContent='Şifre yanlış';$('#pw').value=''}}});
 
 function start(){applySet();try{navigator.storage?.persist?.()}catch{}load(S.lang)}
