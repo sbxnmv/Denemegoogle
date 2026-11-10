@@ -121,7 +121,7 @@ const idb=(()=>{try{
 async function getKey(){let k=ls('gkey','');if(!k){try{k=(await idb.get('gkey'))||''}catch{}if(k)st('gkey',k)}return k}
 
 const S={lang:ls('lang','en'),words:{en:null,de:null},cur:null,filter:'all',answered:false,waiting:false,xr:[],wq:'',oz:false,ozQ:null,
-  set:Object.assign({theme:'dark',font:1,srs:true,blur:true,test:false,gem:false},ls('set',{})),dict:'',trc:{}};
+  set:Object.assign({theme:'dark',font:1,srs:true,blur:true,test:false,gem:false,ozelAlis:true},ls('set',{})),dict:'',trc:{}};
 const W=()=>S.words[S.lang]||[];
 const A=()=>W().filter(w=>!w.sehv); /* hatalı işaretliler hariç */
 const grup=p=>p<BILMIREM_ESK?'Bilmirem':p<ORTA_UST?'Orta':'Yaxsi';
@@ -188,7 +188,7 @@ function sec(){
   const ag=pool.map(w=>{
     const pu=w.puan||0,g=grup(pu), a=Math.max(1,10-pu)*(g==='Bilmirem'?cb:g==='Orta'?co:ci);
     const x=S.set.srs?a*srsAgirlik(w,n):a;
-    return w.ozel?x*OZEL_AGIRLIK:x; /* özel kelimeler daha sık çıkar */
+    return w.ozel&&S.set.ozelAlis!==false?x*OZEL_AGIRLIK:x; /* özel kelimeler daha sık çıkar */
   });
   let r=Math.random()*ag.reduce((a,b)=>a+b,0);
   for(let i=0;i<pool.length;i++){r-=ag[i];if(r<=0)return pool[i]}
@@ -229,7 +229,7 @@ function show(){
     stats();return;
   }
   S.cur=w;
-  if(w.ozel&&!w.sehv)return showOzel(w);
+  if(w.ozel&&!w.sehv&&S.set.ozelAlis!==false)return showOzel(w);
   showNormal(w);
 }
 function showNormal(w){
@@ -537,7 +537,7 @@ function openSettings(){
   modal(`<h3>Ayarlar<button onclick="closeModal()">✕</button></h3>
     <div class="opt"><span>Tema</span><div class="seg"><button class="${s.theme==='dark'?'on':''}" onclick="setOpt('theme','dark',1)">🌙</button><button class="${s.theme==='light'?'on':''}" onclick="setOpt('theme','light',1)">☀️</button></div></div>
     <div class="opt"><span>Yazı boyutu</span><div class="seg">${[1,2,3].map(i=>`<button class="${s.font===i?'on':''}" onclick="setOpt('font',${i},1)">${i}</button>`).join('')}</div></div>
-    ${chk('srs','🔁 Aralıklı tekrar')}${chk('blur','Anlamı gizle (dokununca açılır)')}
+    ${chk('srs','🔁 Aralıklı tekrar')}${chk('ozelAlis','⭐ Özel kelime alıştırması (kapalıysa normal kart)')}${chk('blur','Anlamı gizle (dokununca açılır)')}
     ${S.lang==='de'?chk('test','🎯 Artikel testi (1/2/3)'):''}
     ${chk('gem','🎧 Dinlemede Gemini sesi (kota harcar)')}
     <div class="opt"><span>Yazılmalı kelimeler</span><button onclick="openYaz()">✍️ Aç</button></div>
@@ -551,7 +551,7 @@ function setOpt(k,v,reopen){
   S.set[k]=v;applySet();
   if(reopen)openSettings();
   if(k==='srs'||k==='test'){if(k==='test'&&v&&!W().some(w=>artikeller(w.kelime).length)){S.set.test=false;applySet();toast('Artikelli kelime yok');return}show()}
-  else if(k==='blur')show();
+  else if(k==='blur'||k==='ozelAlis')show();
 }
 
 /* ── kelime ekle (otomatik doldurma, Enter, "kaydet ve yenisi") ── */
