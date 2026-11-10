@@ -328,27 +328,19 @@ function pickArt(a){
 const ozAd=k=>(k||'').replace(/\(.*?\)/g,' ').replace(/\s+/g,' ').trim();
 const ozEq=(a,b)=>a.toLowerCase()===b.toLowerCase();
 async function ozelUret(w){
-  const L=LANGS[S.lang].ad, tk=temel(w.kelime), eski=(w.ozel_cumleler||[]).slice(-12);
-  const SYS='Sen Türkçe cümle yazan bir dil öğretmenisin. Sadece geçerli JSON döndür, başka hiçbir şey yazma. Türkçe yaz (Azerbaycanca DEĞİL).';
-  const p=`${L} kelime: "${tk}"
-Türkçe karşılığı: "${w.karsiligi}"
-
-Bu kelimenin Türkçe karşılığını (gerekirse çekimli halde, örn. gitmek → giderken) kullanan, günlük hayattan, en fazla 12 kelimelik doğal bir Türkçe cümle yaz. Cümlede ${L} kelimenin kendisi (${tk}) geçmesin.${eski.length?`
-Şu cümleleri ve benzerlerini KULLANMA:
-- ${eski.join('\n- ')}`:''}
-
-Çıktı formatı: {"cumle":"...","alti":"..."}
-"alti": cümlede ${L} kelimeye karşılık gelen Türkçe kelime, cümlede geçtiği haliyle birebir.`;
-  for(let i=0;i<3;i++){
-    const r=await gem(p,700,SYS,.9);
-    try{
-      const j=JSON.parse(r.replace(/```json|```/g,'').trim());
-      const c=String(j.cumle||'').trim(), a=String(j.alti||'').trim();
-      const idx=c.toLocaleLowerCase('tr').indexOf(a.toLocaleLowerCase('tr'));
-      if(c&&a&&idx>=0&&!eski.includes(c))return{c,a,idx};
-    }catch{}
+  const L=LANGS[S.lang].ad, tk=temel(w.kelime), eski=(w.ozel_cumleler||[]).slice(-3);
+  const p=`${L}: ${tk} = ${w.karsiligi}
+Bu anlamı kullanan, en fazla 10 kelimelik Türkçe bir cümle yaz.${eski.length?' Bunlara benzemesin: '+eski.join(' / '):''}
+Format (başka hiçbir şey yazma): cümle|cümledeki karşılık kelimesi`;
+  let tok=0;
+  for(let i=0;i<2;i++){
+    const r=await gem(p,80,'Türkçe yaz, Azerbaycanca değil.',.9);
+    tok+=S.tokLast||0;
+    const [c0,a0]=r.split('\n')[0].split('|'), c=(c0||'').trim(), a=(a0||'').trim();
+    const idx=c.toLocaleLowerCase('tr').indexOf(a.toLocaleLowerCase('tr'));
+    if(c&&a&&idx>=0&&!eski.includes(c))return{c,a,idx,tok};
   }
-  throw new Error('Cümle üretilemedi');
+  throw new Error('Cümle üretilemedi ('+tok+' token)');
 }
 function ozSecenek(w){
   const dogru=ozAd(w.kelime), art=S.lang==='de'&&artikeller(w.kelime).length>0, d=[];
@@ -376,6 +368,7 @@ async function showOzel(w){
     <div id="ozo">${opts.map((o,i)=>`<button class="ch" onclick="ozPick(${i})">${esc(o)}</button>`).join('')}</div>
     <div class="verdict" id="verdict"></div>
     <div class="ozr" id="ozr"></div>
+    <div class="mini" style="margin-top:.6rem">🤖 Bu cümle: ${q.tok} token</div>
   </div>
   <button class="skip" id="ozs" onclick="show()">Geç →</button>`;
 }
@@ -782,7 +775,7 @@ async function gem(prompt,max,sys,temp){
   if(!t)throw new Error('Boş cevap');
   try{
     const u=ls('gusage',{}), x=u.d===today()?u:{d:today(),req:0,tok:0};
-    x.req++; x.tok+=j.usageMetadata?.totalTokenCount||0; st('gusage',x);
+    S.tokLast=j.usageMetadata?.totalTokenCount||0; x.req++; x.tok+=S.tokLast; st('gusage',x);
     if(!sys)toast(`🤖 ${j.usageMetadata?.totalTokenCount||'?'} token · bugün ${x.req} istek`);
   }catch{}
   return t;
