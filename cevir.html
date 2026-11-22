@@ -153,13 +153,14 @@ async function gem(prompt,max){
 }
 
 /* ── link → gönderi kimliği ── */
-let DATA=null, BL=[]; /* BL: her metin bloğunun kelime listesi */
+let DATA=null, BL=[], WAIT=false; /* BL: her metin bloğunun kelime listesi */
 function parseLink(raw){
   let u;try{u=new URL(raw.trim())}catch{return null}
   let m=u.pathname.match(/\/comments\/([a-z0-9]+)/i);
   if(!m&&u.hostname==='redd.it')m=u.pathname.match(/^\/([a-z0-9]+)/i);
   return m?m[1]:null;
 }
+const apiUrl=id=>`https://api.reddit.com/comments/${id}?limit=500&raw_json=1`;
 const jsonUrl=id=>`https://www.reddit.com/comments/${id}.json?limit=500&raw_json=1`;
 
 /* ── çekme ── */
@@ -176,7 +177,7 @@ async function tryFetch(url){
 async function cek(id){
   const u=jsonUrl(id), own=($('#px').value||'').trim(), ways=[];
   if(own)ways.push(['kendi proxy',own+encodeURIComponent(u)]);
-  ways.push(['doğrudan',u],['old.reddit',u.replace('www.reddit.com','old.reddit.com')],
+  ways.push(['doğrudan',u],['api.reddit',apiUrl(id)],['old.reddit',u.replace('www.reddit.com','old.reddit.com')],
     ['corsproxy.io','https://corsproxy.io/?url='+encodeURIComponent(u)],
     ['allorigins','https://api.allorigins.win/raw?url='+encodeURIComponent(u)],
     ['codetabs','https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)]);
@@ -348,11 +349,29 @@ async function getir(){
     goster(ayristir(j));
     $('#durum').innerHTML=`<div class="ok">✓ Yüklendi (${esc(ad)})</div>`;
   }catch(e){
-    $('#durum').innerHTML=`<div class="err">${esc(e.message)}\n\nÇözüm: "Ayarlar" bölümünü aç, elle yöntemi kullan.</div>`;
-    $('#setd').open=true;
+    WAIT=true;
+    $('#durum').innerHTML=`<div class="err">Otomatik çekilemedi (Reddit engelliyor).</div>
+      <div class="mini" style="margin-top:.6rem">Telefonda biri açılmazsa (ya da Reddit uygulaması açılırsa) diğerini dene:</div>
+      <a class="go" style="display:block;text-align:center;text-decoration:none;border-radius:10px;margin-top:.4rem" href="${esc(apiUrl(id))}" target="_blank" rel="noopener">📂 1) api.reddit.com</a>
+      <a class="go" style="display:block;text-align:center;text-decoration:none;border-radius:10px;margin-top:.4rem" href="${esc(jsonUrl(id).replace('www.','old.'))}" target="_blank" rel="noopener">📂 2) old.reddit.com</a>
+      <a class="go" style="display:block;text-align:center;text-decoration:none;border-radius:10px;margin-top:.4rem" href="${esc(jsonUrl(id))}" target="_blank" rel="noopener">📂 3) www.reddit.com</a>
+      <div class="mini">Açılan sayfada yazının tamamını seçip kopyala, sonra bu sayfaya dön: kopyaladığın otomatik işlenir.</div>`;
   }
   $('#gb').disabled=false;
 }
+/* sayfaya geri dönünce panodaki JSON'u kendiliğinden işle */
+async function oku(){
+  if(!WAIT)return;
+  try{
+    const t=(await navigator.clipboard.readText()).trim();
+    if(!t.startsWith('['))return;
+    const j=JSON.parse(t);
+    if(!Array.isArray(j)||j.length<2)return;
+    goster(ayristir(j));WAIT=false;$('#durum').innerHTML='<div class="ok">✓ Yüklendi (panodan)</div>';
+  }catch{}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)oku()});
+window.addEventListener('focus',oku);
 function elle(){
   try{
     const j=JSON.parse($('#man').value.trim());
