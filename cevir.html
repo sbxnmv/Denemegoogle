@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14130f">
+<title>Reddit Oku</title>
+<style>
+:root{--bg:#14130f;--card:#1e1d18;--bd:#35332a;--tx:#f1eee4;--mu:#9a9686;--ac:#e0b44c;--gr:#4cc38a;--rd:#ee6055;--der:#6cb2ff;--fs:16px;--l:68%}
+[data-theme=light]{--bg:#f3f1ea;--card:#fffdf8;--bd:#dcd8c8;--tx:#23211a;--mu:#6f6b5c;--ac:#9a6b00;--gr:#23915f;--rd:#c8372d;--der:#1565c0;--l:38%}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:var(--fs)}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);touch-action:manipulation}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:.5rem .8rem}
+button:active{transform:scale(.97)}button:disabled{opacity:.45}
+a{color:var(--der)}
+.wrap{max-width:640px;margin:0 auto;padding:.7rem .9rem 3rem}
+.wrap.pn{padding-bottom:17rem}
+.bar{display:flex;gap:.5rem;align-items:center;justify-content:space-between;margin-bottom:.7rem}
+.bar b{font-size:1.05rem}
+input[type=text],input[type=url],textarea{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.65rem}
+textarea{min-height:5rem;resize:vertical}
+.row{display:flex;gap:.5rem}.row>input{flex:1;min-width:0}
+.go{background:var(--ac);color:#14130f;border:0;font-weight:700;padding:.65rem 1rem}
+.mini{font-size:.78rem;color:var(--mu);line-height:1.5;margin-top:.5rem}
+details.set{margin-top:.6rem;font-size:.85rem}
+details.set summary{color:var(--mu);cursor:pointer;padding:.3rem 0}
+details.set label{display:block;font-size:.78rem;color:var(--mu);margin:.7rem 0 .25rem}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0}
+.post{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:1rem;margin-top:1rem}
+.post h1{font-family:Georgia,serif;font-size:1.4rem;line-height:1.4;margin:.4rem 0 .6rem;word-break:break-word}
+.meta{font-size:.78rem;color:var(--mu);line-height:1.6}
+.body{white-space:pre-wrap;word-break:break-word;line-height:1.8;margin-top:.7rem}
+.sum{display:flex;justify-content:space-between;align-items:center;margin:1.2rem 0 .4rem}
+.sum span{color:var(--mu);font-size:.82rem}
+.c{margin-top:.55rem}
+.c>details>summary{cursor:pointer;font-size:.8rem;color:var(--mu);list-style:none;padding:.3rem 0}
+.c>details>summary::-webkit-details-marker{display:none}
+.c>details>summary::before{content:"▾ ";color:var(--mu)}
+.c>details:not([open])>summary::before{content:"▸ "}
+.au{font-weight:700;font-size:.88rem}
+.op{background:var(--ac);color:#14130f;border-radius:5px;padding:0 .3rem;font-size:.68rem;font-weight:700;margin-left:.3rem}
+.ct{white-space:pre-wrap;word-break:break-word;line-height:1.8;padding:.1rem 0 .2rem}
+.kids{margin-left:.15rem;padding-left:.65rem;border-left:2px solid var(--bd)}
+.kids.deep{padding-left:.3rem}
+.more{font-size:.75rem;color:var(--mu);margin-top:.4rem;font-style:italic}
+.dead{color:var(--mu);font-style:italic}
+.err{color:var(--rd);font-size:.85rem;margin-top:.7rem;line-height:1.5;white-space:pre-wrap}
+.ok{color:var(--gr);font-size:.78rem;margin-top:.5rem}
+/* dokunulabilir kelimeler */
+.post h1,.body,.ct{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.w{border-radius:4px;cursor:pointer}
+.w.sel,.g.sel{background:var(--ac);color:#14130f}
+.w.sel{font-weight:600}
+/* alt panel */
+#pn{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;justify-content:center;pointer-events:none}
+#pn.on{display:flex}
+#pi{pointer-events:auto;width:100%;max-width:640px;background:var(--card);border:1px solid var(--bd);border-bottom:0;border-radius:18px 18px 0 0;padding:.8rem 1rem calc(.8rem + env(safe-area-inset-bottom));max-height:46dvh;overflow-y:auto;box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.ph{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.ph b{font-family:Georgia,serif;font-size:1.25rem;color:var(--ac);word-break:break-word}
+.ph span{display:flex;gap:.4rem;flex:none}
+.ph button{width:2.6rem;height:2.6rem;padding:0;border-radius:50%}
+#pb .am{font-weight:700;font-size:1.25rem;color:var(--gr);margin-bottom:.3rem}
+#pb{margin-top:.5rem;line-height:1.65;white-space:pre-wrap;font-size:1.02rem}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);padding:.6rem 1rem;border-radius:10px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;max-width:90vw}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="bar"><button onclick="location.href=KOD1_URL">← Kelime Öğren</button><b>Reddit Oku</b><span style="width:2rem"></span></div>
+
+  <div class="row">
+    <input type="url" id="u" placeholder="Reddit linkini yapıştır" autocomplete="off" onkeydown="if(event.key==='Enter')getir()">
+    <button onclick="yapistir()" aria-label="Panodan yapıştır">📋</button>
+  </div>
+  <div class="row" style="margin-top:.5rem"><button class="go" style="flex:1" id="gb" onclick="getir()">Getir</button></div>
+  <div id="durum"></div>
+
+  <details class="set" id="setd">
+    <summary>Ayarlar / link çalışmazsa</summary>
+    <label>Gemini API anahtarı <span id="ks"></span></label>
+    <div class="row"><input type="text" id="gk" placeholder="AIza… (kod1'de kayıtlıysa gerek yok)" autocomplete="off"><button onclick="kaydetKey()">💾</button></div>
+    <label>Model</label>
+    <input type="text" id="gm" onchange="st('gmodel',this.value.trim()||'gemini-3.5-flash-lite')">
+    <label>Kendi proxy adresin (isteğe bağlı)</label>
+    <input type="text" id="px" placeholder="https://xxx.workers.dev/?url=" onchange="st('rproxy',this.value.trim());toast('Kaydedildi')">
+    <label>Elle yöntem: bağlantıyı tarayıcıda aç, çıkan yazının tamamını kopyala, buraya yapıştır</label>
+    <div class="mini" id="jl" style="margin:0 0 .4rem"></div>
+    <textarea id="man" placeholder="JSON buraya"></textarea>
+    <button style="margin-top:.5rem;width:100%" onclick="elle()">Yapıştırdığımı işle</button>
+  </details>
+
+  <div id="out"></div>
+</div>
+
+<div id="pn"><div id="pi">
+  <div class="ph"><b id="ps"></b><span><button onclick="sayS()" aria-label="Dinle">🔊</button><button onclick="kapat()" aria-label="Kapat">✕</button></span></div>
+  <div id="pb"></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* kod1'in dosya adı (GitHub'da neyse onu yaz) */
+const KOD1_URL='index.html';
+const MAX_KELIME=8; /* tek seferde en fazla kaç kelimelik ifade seçilebilir */
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const st=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const today=()=>new Date().toISOString().slice(0,10);
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2400)}
+
+/* kod1 ile aynı tema / yazı boyutu */
+const set=ls('set',{});
+document.documentElement.dataset.theme=set.theme||'dark';
+document.documentElement.style.setProperty('--fs',[16,18,20][(set.font||1)-1]+'px');
+$('#px').value=ls('rproxy','');
+$('#gm').value=ls('gmodel','')==='gemini-2.5-flash-lite'||!ls('gmodel','')?'gemini-3.5-flash-lite':ls('gmodel','');
+
+/* ── Gemini anahtarı: kod1 ile aynı depo (aynı alan adındaysa otomatik gelir) ── */
+const idb=(()=>{try{
+  const o=indexedDB.open('kv',1);o.onupgradeneeded=()=>o.result.createObjectStore('s');
+  const p=new Promise(r=>{o.onsuccess=()=>r(o.result);o.onerror=()=>r(null)});
+  return{get:k=>p.then(d=>d?new Promise(r=>{const q=d.transaction('s').objectStore('s').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r()}):null),
+         set:(k,v)=>p.then(d=>d&&d.transaction('s','readwrite').objectStore('s').put(v,k))};
+}catch{return{get:async()=>null,set:async()=>0}}})();
+async function getKey(){let k=ls('gkey','');if(!k){try{k=(await idb.get('gkey'))||''}catch{}if(k)st('gkey',k)}return k}
+async function keyDurum(){const k=await getKey();$('#ks').textContent=k?'· kayıtlı: '+k.slice(0,4)+'…'+k.slice(-4):'· yok'}
+async function kaydetKey(){
+  const v=$('#gk').value.trim(); if(!v)return toast('Anahtar boş');
+  st('gkey',v);try{await idb.set('gkey',v)}catch{}
+  $('#gk').value='';keyDurum();toast('Kaydedildi');
+}
+keyDurum();
+
+async function gem(prompt,max){
+  const key=await getKey();
+  if(!key)throw new Error('Önce Ayarlar bölümüne Gemini anahtarını gir (ya da kod1\'de kaydet, aynı adreste çalışır).');
+  const m=ls('gmodel',''), model=(!m||m==='gemini-2.5-flash-lite')?'gemini-3.5-flash-lite':m;
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({systemInstruction:{parts:[{text:'Sen bir dil öğretmenisin. Cevabın TAMAMI Türkçe olmalı (sadece İngilizce kelime ve örnekler orijinal dilde kalır). Düz metin yaz, markdown kullanma.'}]},
+      contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error?.message||r.status);
+  const t=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+  if(!t)throw new Error('Boş cevap');
+  try{const u=ls('gusage',{}),x=u.d===today()?u:{d:today(),req:0,tok:0};x.req++;x.tok+=j.usageMetadata?.totalTokenCount||0;st('gusage',x)}catch{}
+  return t;
+}
+
+/* ── link → gönderi kimliği ── */
+let DATA=null, BL=[]; /* BL: her metin bloğunun kelime listesi */
+function parseLink(raw){
+  let u;try{u=new URL(raw.trim())}catch{return null}
+  let m=u.pathname.match(/\/comments\/([a-z0-9]+)/i);
+  if(!m&&u.hostname==='redd.it')m=u.pathname.match(/^\/([a-z0-9]+)/i);
+  return m?m[1]:null;
+}
+const jsonUrl=id=>`https://www.reddit.com/comments/${id}.json?limit=500&raw_json=1`;
+
+/* ── çekme ── */
+async function tryFetch(url){
+  const ac=new AbortController(), t=setTimeout(()=>ac.abort(),12000);
+  try{
+    const r=await fetch(url,{signal:ac.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=JSON.parse(await r.text());
+    if(!Array.isArray(j)||j.length<2)throw new Error('beklenmeyen cevap');
+    return j;
+  }finally{clearTimeout(t)}
+}
+async function cek(id){
+  const u=jsonUrl(id), own=($('#px').value||'').trim(), ways=[];
+  if(own)ways.push(['kendi proxy',own+encodeURIComponent(u)]);
+  ways.push(['doğrudan',u],['old.reddit',u.replace('www.reddit.com','old.reddit.com')],
+    ['corsproxy.io','https://corsproxy.io/?url='+encodeURIComponent(u)],
+    ['allorigins','https://api.allorigins.win/raw?url='+encodeURIComponent(u)],
+    ['codetabs','https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)]);
+  const errs=[];
+  for(const [ad,url] of ways){
+    $('#durum').innerHTML=`<div class="mini">⏳ Deneniyor: ${esc(ad)}…</div>`;
+    try{return{j:await tryFetch(url),ad}}catch(e){errs.push(ad+': '+(e.name==='AbortError'?'zaman aşımı':e.message))}
+  }
+  throw new Error('Hiçbir yol çalışmadı:\n'+errs.join('\n'));
+}
+
+/* ── ayrıştırma ── */
+function ayristir(j){
+  const p=j[0].data.children[0].data; let say=0;
+  const yorum=ch=>(ch||[]).map(c=>{
+    if(c.kind==='more')return{more:c.data.count||0};
+    if(c.kind!=='t1')return null;
+    const d=c.data; say++;
+    return{a:d.author,b:d.body,s:d.score,t:d.created_utc,op:!!d.is_submitter,k:d.replies&&d.replies.data?yorum(d.replies.data.children):[]};
+  }).filter(Boolean);
+  const yorumlar=yorum(j[1].data.children);
+  return{baslik:p.title,sub:p.subreddit_name_prefixed||('r/'+p.subreddit),yazar:p.author,puan:p.score,adet:p.num_comments,t:p.created_utc,
+    govde:p.selftext||'',link:p.is_self?'':(p.url_overridden_by_dest||p.url||''),yorumlar,say};
+}
+
+/* ── metni dokunulabilir kelimelere böl ──
+   Her kelime <span class="w" data-b=blok data-i=sıra>, aralarındaki boşluk <span class="g"> (seçim kesintisiz görünsün diye).
+   end[i]=true → i. kelimeden sonra cümle bitiyor (bağlam cümlesini bulmak için). */
+const WRE=/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
+function rt(text){
+  const b=BL.length, ws=[], end=[]; BL.push({ws,end});
+  let out='', gh='', gr='';
+  const gap=()=>{if(gh)out+=ws.length?`<span class="g" data-b="${b}" data-g="${ws.length-1}">${gh}</span>`:gh};
+  String(text||'').split(/(https?:\/\/[^\s<)]+)/).forEach((p,k)=>{
+    if(k%2){gh+=`<a href="${esc(p)}" target="_blank" rel="noopener">${esc(p)}</a>`;gr+=' ';return}
+    let last=0,m; WRE.lastIndex=0;
+    while((m=WRE.exec(p))){
+      const g=p.slice(last,m.index); gh+=esc(g); gr+=g;
+      if(ws.length)end[ws.length-1]=/[.!?\n]/.test(gr);
+      gap(); gh='';gr='';
+      out+=`<span class="w" data-b="${b}" data-i="${ws.length}">${esc(m[0])}</span>`; ws.push(m[0]);
+      last=m.index+m[0].length;
+    }
+    gh+=esc(p.slice(last)); gr+=p.slice(last);
+  });
+  if(ws.length)end[ws.length-1]=true;
+  return out+gh;
+}
+
+/* ── görüntü ── */
+const tarih=s=>new Date(s*1000).toLocaleString('tr-TR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function renk(a){let h=0;for(const ch of a||'')h=(h*31+ch.charCodeAt(0))%360;return`hsl(${h},60%,var(--l))`}
+function yHtml(c,d){
+  if(c.more)return`<div class="more">… +${c.more} yorum daha (Reddit bunları göndermedi)</div>`;
+  const dead=!c.a||c.a==='[deleted]', sil=c.b==='[deleted]'||c.b==='[removed]';
+  const head=`<span class="au" style="color:${dead?'var(--mu)':renk(c.a)}">${esc(c.a||'[silinmiş]')}</span>${c.op?'<span class="op">OP</span>':''}<span> · ${c.s??0} puan · ${tarih(c.t)}</span>`;
+  const body=sil?'[silinmiş yorum]':rt(c.b);
+  const kids=c.k.map(x=>yHtml(x,d+1)).join('');
+  return`<div class="c"><details open><summary>${head}</summary><div class="ct ${sil?'dead':''}">${body}</div>${kids?`<div class="kids ${d>=5?'deep':''}">${kids}</div>`:''}</details></div>`;
+}
+function goster(D){
+  DATA=D; BL=[]; kapat();
+  const title=rt(D.baslik), govde=D.govde?rt(D.govde):'';
+  $('#out').innerHTML=`
+  <div class="post">
+    <div class="meta">${esc(D.sub)} · <b style="color:${renk(D.yazar)}">${esc(D.yazar)}</b> <span class="op">OP</span><br>${D.puan} puan · ${D.adet} yorum · ${tarih(D.t)}</div>
+    <h1>${title}</h1>
+    ${D.link?`<div class="meta"><a href="${esc(D.link)}" target="_blank" rel="noopener">${esc(D.link)}</a></div>`:''}
+    ${govde?`<div class="body">${govde}</div>`:''}
+  </div>
+  <div class="sum"><span>💬 ${D.say} yorum yüklendi${D.say<D.adet?` (toplam ${D.adet})`:''}</span><button onclick="kopyala()">📋 Hepsini kopyala</button></div>
+  ${D.yorumlar.map(c=>yHtml(c,0)).join('')||'<div class="mini">Yorum yok.</div>'}`;
+}
+
+function duzMetin(D){
+  const f=(c,d)=>c.more?'':`${'  '.repeat(d)}[${c.a||'silinmiş'}${c.op?' / OP':''}] ${(c.b||'').replace(/\n+/g,' ')}\n`+c.k.map(x=>f(x,d+1)).join('');
+  return `${D.baslik}\n(${D.sub} · ${D.yazar})\n\n${D.govde}\n\n--- Yorumlar ---\n`+D.yorumlar.map(c=>f(c,0)).join('');
+}
+function kopyala(){
+  if(!DATA)return;
+  (navigator.clipboard?.writeText(duzMetin(DATA))||Promise.reject()).then(()=>toast('Kopyalandı')).catch(()=>toast('Kopyalanamadı'));
+}
+
+/* ═══ tek parmakla seçim ═══
+   • Kelimeye dokun → seçilir, (otomatik açıksa) ~0,7 sn sonra Gemini açıklar.
+   • Yanındaki/yakındaki başka kelimeye dokun → seçim o kelimeye kadar genişler (ifade / phrasal verb).
+   • Seçili aralığın içindeki bir kelimeye dokun → seçim sadece o kelimeye iner.
+   • ✕ ile kapat. */
+const SEL={b:-1,s:0,e:0}; let tm=0, rq=0;
+const secili=()=>SEL.b>=0?BL[SEL.b].ws.slice(SEL.s,SEL.e+1).join(' '):'';
+$('#out').addEventListener('click',e=>{
+  const w=e.target.closest('.w'); if(!w)return;
+  const b=+w.dataset.b, i=+w.dataset.i, on=$('#pn').classList.contains('on');
+  if(on&&SEL.b===b){
+    if(i>=SEL.s&&i<=SEL.e)SEL.s=SEL.e=i;
+    else{
+      const s=Math.min(SEL.s,i), z=Math.max(SEL.e,i);
+      if(z-s+1>MAX_KELIME)SEL.s=SEL.e=i; else{SEL.s=s;SEL.e=z}
+    }
+  }else{SEL.b=b;SEL.s=SEL.e=i}
+  paint(); panel(); plan();
+});
+function paint(){
+  document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));
+  if(SEL.b<0)return;
+  document.querySelectorAll(`.w[data-b="${SEL.b}"]`).forEach(x=>{const i=+x.dataset.i;if(i>=SEL.s&&i<=SEL.e)x.classList.add('sel')});
+  document.querySelectorAll(`.g[data-b="${SEL.b}"]`).forEach(x=>{const i=+x.dataset.g;if(i>=SEL.s&&i<SEL.e)x.classList.add('sel')});
+}
+function panel(){
+  $('#pn').classList.add('on'); $('#wrap').classList.add('pn');
+  $('#ps').textContent=secili();
+}
+function kapat(){
+  clearTimeout(tm); rq++; SEL.b=-1; paint();
+  $('#pn').classList.remove('on'); $('#wrap').classList.remove('pn');
+}
+/* dokunmak ASLA istek göndermez. Daha önce açıklanmışsa kayıtlı cevap bedava gösterilir, yoksa 🤖 butonu çıkar. */
+function plan(){
+  clearTimeout(tm); rq++;
+  const c=ls('rai2',{})[baglam()+'|'+secili()];
+  if(c)yaz(c);
+  else $('#pb').innerHTML='<button class="go" style="width:100%;padding:.8rem" onclick="acikla()">🤖 Cümledeki anlamını açıkla</button>';
+}
+function yaz(t){
+  const m=t.match(/^Anlam:\s*(.+)$/m), n=t.match(/^Not:\s*([\s\S]+)$/m);
+  $('#pb').innerHTML=m?`<div class="am">${esc(m[1])}</div>${n?`<div>${esc(n[1].trim())}</div>`:''}`:esc(t);
+}
+function baglam(){
+  const B=BL[SEL.b]; let a=SEL.s, z=SEL.e;
+  while(a>0&&!B.end[a-1])a--;
+  while(z<B.ws.length-1&&!B.end[z])z++;
+  if(z-a>50){a=Math.max(a,SEL.s-25);z=Math.min(z,SEL.e+25)}
+  return B.ws.slice(a,z+1).join(' ');
+}
+async function acikla(){
+  if(SEL.b<0)return;
+  const my=++rq, sel=secili(), sent=baglam(), cache=ls('rai2',{}), ck=sent+'|'+sel;
+  if(cache[ck]){yaz(cache[ck]);return}
+  $('#pb').textContent='⏳';
+  const prompt=`Reddit post title: "${DATA?.baslik||''}"
+Sentence: "${sent}"
+Selected part: "${sel}"
+What does the selected part mean IN THIS SENTENCE? Answer in Turkish, plain text, exactly this format:
+Anlam: the Turkish meaning it has in this sentence (1-5 words, the translation that would fit in this sentence)
+Not: max 25 words in Turkish: if it is a phrasal verb, idiom, slang or abbreviation say so; if inflected, give the base form; if it has other common meanings that do NOT apply here, mention the main one briefly.
+Write in TURKISH.`;
+  try{
+    const r=await gem(prompt,300);
+    cache[ck]=r;const ks=Object.keys(cache);if(ks.length>300)delete cache[ks[0]];st('rai2',cache);
+    if(my===rq)yaz(r);
+  }catch(e){if(my===rq)$('#pb').innerHTML=`<span style="color:var(--rd)">Hata: ${esc(e.message)}</span><br><button class="go" style="margin-top:.5rem" onclick="acikla()">Tekrar dene</button>`}
+}
+function sayS(){
+  const t=secili(); if(!t||!window.speechSynthesis)return;
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; speechSynthesis.speak(u);
+}
+
+/* ── akış ── */
+async function yapistir(){
+  try{$('#u').value=(await navigator.clipboard.readText()).trim();getir()}catch{toast('Pano okunamadı, elle yapıştır')}
+}
+async function getir(){
+  const id=parseLink($('#u').value);
+  $('#jl').innerHTML=id?`<a href="${esc(jsonUrl(id))}" target="_blank" rel="noopener">${esc(jsonUrl(id))}</a>`:'';
+  if(!id){$('#durum').innerHTML='<div class="err">Geçerli bir Reddit gönderi linki değil. (…/comments/xxxx/… biçiminde olmalı)</div>';return}
+  $('#gb').disabled=true;$('#out').innerHTML='';
+  try{
+    const {j,ad}=await cek(id);
+    goster(ayristir(j));
+    $('#durum').innerHTML=`<div class="ok">✓ Yüklendi (${esc(ad)})</div>`;
+  }catch(e){
+    $('#durum').innerHTML=`<div class="err">${esc(e.message)}\n\nÇözüm: "Ayarlar" bölümünü aç, elle yöntemi kullan.</div>`;
+    $('#setd').open=true;
+  }
+  $('#gb').disabled=false;
+}
+function elle(){
+  try{
+    const j=JSON.parse($('#man').value.trim());
+    if(!Array.isArray(j)||j.length<2)throw new Error('Bu bir Reddit konu JSON\'u gibi görünmüyor');
+    goster(ayristir(j));$('#durum').innerHTML='<div class="ok">✓ Yüklendi (elle)</div>';
+    $('#setd').open=false;
+  }catch(e){$('#durum').innerHTML=`<div class="err">Hata: ${esc(e.message)}</div>`}
+}
+</script>
+</body>
+</html>
