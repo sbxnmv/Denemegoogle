@@ -16,7 +16,7 @@ button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-r
 button:active{transform:scale(.97)}button:disabled{opacity:.45}
 a{color:var(--der)}
 .wrap{max-width:640px;margin:0 auto;padding:.7rem .9rem 3rem}
-.wrap.pn{padding-bottom:17rem}
+.wrap.pn{padding-bottom:58dvh}
 .bar{display:flex;gap:.5rem;align-items:center;justify-content:space-between;margin-bottom:.7rem}
 .bar b{font-size:1.05rem}
 input[type=text],input[type=url],textarea{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.65rem}
@@ -56,11 +56,18 @@ details.set label{display:block;font-size:.78rem;color:var(--mu);margin:.7rem 0 
 /* alt panel */
 #pn{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;justify-content:center;pointer-events:none}
 #pn.on{display:flex}
-#pi{pointer-events:auto;width:100%;max-width:640px;background:var(--card);border:1px solid var(--bd);border-bottom:0;border-radius:18px 18px 0 0;padding:.8rem 1rem calc(.8rem + env(safe-area-inset-bottom));max-height:46dvh;overflow-y:auto;box-shadow:0 -6px 24px rgba(0,0,0,.35)}
-.ph{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
-.ph b{font-family:Georgia,serif;font-size:1.25rem;color:var(--ac);word-break:break-word}
-.ph span{display:flex;gap:.4rem;flex:none}
-.ph button{width:2.6rem;height:2.6rem;padding:0;border-radius:50%}
+#pi{pointer-events:auto;width:100%;max-width:640px;background:var(--card);border:1px solid var(--bd);border-bottom:0;border-radius:18px 18px 0 0;padding:.8rem 1rem calc(.8rem + env(safe-area-inset-bottom));max-height:54dvh;overflow-y:auto;box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem}
+#ps{flex:1;min-width:0;resize:none;font-family:Georgia,serif;font-size:1.1rem;line-height:1.4;color:var(--ac);font-weight:700;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:.5rem .6rem;max-height:8rem;overflow-y:auto}
+.ph span{display:flex;flex-direction:column;gap:.35rem;flex:none}
+.ph button{width:2.4rem;height:2.4rem;padding:0;border-radius:50%;font-size:1rem}
+.acts{display:flex;gap:.5rem;margin-top:.5rem}.acts .go{flex:1;padding:.65rem .4rem;font-size:.9rem}
+.qrow{display:flex;gap:.5rem;margin-top:.5rem}.qrow input{flex:1;min-width:0}.qrow button{flex:none}
+#pb .wl{line-height:1.7}#pb .wl b{color:var(--gr)}
+#pb .tr{margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--bd);color:var(--ac);font-weight:700}
+#tg{position:fixed;top:calc(env(safe-area-inset-top,0px) + .5rem);right:.7rem;z-index:45;border-radius:999px;font-weight:700;font-size:.8rem;padding:.45rem .8rem;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+#tg.on{background:var(--ac);color:#14130f;border-color:var(--ac)}
+.w.anc{outline:2px dashed var(--ac);outline-offset:1px}
 #pb .am{font-weight:700;font-size:1.25rem;color:var(--gr);margin-bottom:.3rem}
 #pb{margin-top:.5rem;line-height:1.65;white-space:pre-wrap;font-size:1.02rem}
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);padding:.6rem 1rem;border-radius:10px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;max-width:90vw}
@@ -69,7 +76,7 @@ details.set label{display:block;font-size:.78rem;color:var(--mu);margin:.7rem 0 
 </head>
 <body>
 <div class="wrap" id="wrap">
-  <div class="bar"><button onclick="location.href=KOD1_URL">← Kelime Öğren</button><b>Reddit Oku</b><span style="width:2rem"></span></div>
+  <div class="bar"><button onclick="location.href=KOD1_URL">← Kelime Öğren</button><b>Reddit Oku</b><span style="width:6.5rem"></span></div>
 
   <div class="row">
     <input type="url" id="u" placeholder="Reddit linkini yapıştır" autocomplete="off" onkeydown="if(event.key==='Enter')getir()">
@@ -95,8 +102,12 @@ details.set label{display:block;font-size:.78rem;color:var(--mu);margin:.7rem 0 
   <div id="out"></div>
 </div>
 
+<button id="tg" onclick="toggleMod()">Seçim: Kapalı</button>
 <div id="pn"><div id="pi">
-  <div class="ph"><b id="ps"></b><span><button onclick="sayS()" aria-label="Dinle">🔊</button><button onclick="kapat()" aria-label="Kapat">✕</button></span></div>
+  <div class="ph"><textarea id="ps" rows="2" oninput="fit(this)" aria-label="Seçilen metin (düzenlenebilir)"></textarea>
+    <span><button onclick="sayS()" aria-label="Dinle">🔊</button><button onclick="geri()" aria-label="Eski haline getir">↩</button><button onclick="kapat()" aria-label="Kapat">✕</button></span></div>
+  <div class="acts"><button class="go" onclick="sor('m')">🤖 Anlamı</button><button class="go" onclick="sor('w')">📝 Kelime kelime</button></div>
+  <div class="qrow"><input type="text" id="qi" placeholder="Gemini'ye yaz…" autocomplete="off" onkeydown="if(event.key==='Enter')sor('q')"><button class="go" onclick="sor('q')" aria-label="Gönder">➤</button></div>
   <div id="pb"></div>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -104,7 +115,6 @@ details.set label{display:block;font-size:.78rem;color:var(--mu);margin:.7rem 0 
 <script>
 /* kod1'in dosya adı (GitHub'da neyse onu yaz) */
 const KOD1_URL='index.html';
-const MAX_KELIME=8; /* tek seferde en fazla kaç kelimelik ifade seçilebilir */
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -262,74 +272,123 @@ function kopyala(){
   (navigator.clipboard?.writeText(duzMetin(DATA))||Promise.reject()).then(()=>toast('Kopyalandı')).catch(()=>toast('Kopyalanamadı'));
 }
 
-/* ═══ tek parmakla seçim ═══
-   • Kelimeye dokun → seçilir, (otomatik açıksa) ~0,7 sn sonra Gemini açıklar.
-   • Yanındaki/yakındaki başka kelimeye dokun → seçim o kelimeye kadar genişler (ifade / phrasal verb).
-   • Seçili aralığın içindeki bir kelimeye dokun → seçim sadece o kelimeye iner.
-   • ✕ ile kapat. */
-const SEL={b:-1,s:0,e:0}; let tm=0, rq=0;
-const secili=()=>SEL.b>=0?BL[SEL.b].ws.slice(SEL.s,SEL.e+1).join(' '):'';
+/* ═══ seçim ═══
+   • Sağ üstteki "Seçim" düğmesi kapalıyken sayfaya dokunmak hiçbir şey yapmaz (kaydırırken yanlışlıkla seçmesin).
+   • Açıkken: 1 dokunuş = tek kelime. Aynı kelimeye ard arda 2 dokunuş = cümle modu: o kelime başlangıç olur,
+     sonra başka bir kelimeye dokununca arası tamamen seçilir.
+   • Dokunmak asla Gemini'ye istek göndermez; sadece panelde butona basınca / mesaj gönderince gider.
+   • Seçilen metin panelde düzenlenebilir (silebilir, ekleyebilirsin); Gemini düzenlenmiş halini kullanır. */
+const SEL={b:-1,s:0,e:0}; let MOD=false, RM=false, ANC=null, LAST={b:-1,i:-1,t:0}, ORIG='', rq=0;
+const secili=()=>(($('#ps').value)||'').trim()||ORIG;
+function rangeText(b,a,z){
+  let t='';
+  document.querySelectorAll(`#out [data-b="${b}"]`).forEach(x=>{
+    if(x.classList.contains('w')){const i=+x.dataset.i;if(i>=a&&i<=z)t+=x.textContent}
+    else if(x.classList.contains('g')){const i=+x.dataset.g;if(i>=a&&i<z)t+=x.textContent}
+  });
+  return t.replace(/\s+/g,' ').trim();
+}
+function toggleMod(){
+  MOD=!MOD;
+  const t=$('#tg'); t.classList.toggle('on',MOD); t.textContent='Seçim: '+(MOD?'Açık':'Kapalı');
+  if(!MOD)kapat(); else toast('Seçim açık · kelimeye dokun · 2 kez dokun = cümle başlangıcı, sonra bitiş kelimesine dokun');
+}
 $('#out').addEventListener('click',e=>{
+  if(!MOD)return;
   const w=e.target.closest('.w'); if(!w)return;
-  const b=+w.dataset.b, i=+w.dataset.i, on=$('#pn').classList.contains('on');
-  if(on&&SEL.b===b){
-    if(i>=SEL.s&&i<=SEL.e)SEL.s=SEL.e=i;
-    else{
-      const s=Math.min(SEL.s,i), z=Math.max(SEL.e,i);
-      if(z-s+1>MAX_KELIME)SEL.s=SEL.e=i; else{SEL.s=s;SEL.e=z}
-    }
-  }else{SEL.b=b;SEL.s=SEL.e=i}
+  const b=+w.dataset.b, i=+w.dataset.i, now=Date.now();
+  const dbl=LAST.b===b&&LAST.i===i&&now-LAST.t<450; LAST={b,i,t:now};
+  if(dbl){ANC={b,i};RM=true;SEL.b=b;SEL.s=SEL.e=i}
+  else if(RM&&ANC&&ANC.b===b){SEL.b=b;SEL.s=Math.min(ANC.i,i);SEL.e=Math.max(ANC.i,i);RM=false;ANC=null}
+  else{RM=false;ANC=null;SEL.b=b;SEL.s=SEL.e=i}
   paint(); panel(); plan();
 });
 function paint(){
-  document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));
+  document.querySelectorAll('.sel,.anc').forEach(x=>x.classList.remove('sel','anc'));
   if(SEL.b<0)return;
   document.querySelectorAll(`.w[data-b="${SEL.b}"]`).forEach(x=>{const i=+x.dataset.i;if(i>=SEL.s&&i<=SEL.e)x.classList.add('sel')});
   document.querySelectorAll(`.g[data-b="${SEL.b}"]`).forEach(x=>{const i=+x.dataset.g;if(i>=SEL.s&&i<SEL.e)x.classList.add('sel')});
+  if(RM&&ANC)document.querySelector(`.w[data-b="${ANC.b}"][data-i="${ANC.i}"]`)?.classList.add('anc');
 }
+function fit(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,128)+'px'}
+function geri(){const t=$('#ps');t.value=ORIG;fit(t)}
 function panel(){
+  ORIG=rangeText(SEL.b,SEL.s,SEL.e);
+  const t=$('#ps'); t.value=ORIG; fit(t);
   $('#pn').classList.add('on'); $('#wrap').classList.add('pn');
-  $('#ps').textContent=secili();
 }
 function kapat(){
-  clearTimeout(tm); rq++; SEL.b=-1; paint();
+  rq++; SEL.b=-1; RM=false; ANC=null; LAST={b:-1,i:-1,t:0}; ORIG=''; paint();
   $('#pn').classList.remove('on'); $('#wrap').classList.remove('pn');
 }
-/* dokunmak ASLA istek göndermez. Daha önce açıklanmışsa kayıtlı cevap bedava gösterilir, yoksa 🤖 butonu çıkar. */
+/* seçim değişince: kayıtlı "anlam" cevabı varsa bedava göster, yoksa ipucu */
 function plan(){
-  clearTimeout(tm); rq++;
-  const c=ls('rai2',{})[baglam()+'|'+secili()];
-  if(c)yaz(c);
-  else $('#pb').innerHTML='<button class="go" style="width:100%;padding:.8rem" onclick="acikla()">🤖 Cümledeki anlamını açıkla</button>';
+  rq++;
+  if(RM){$('#pb').innerHTML='<div class="mini">📍 Başlangıç seçildi. Şimdi cümlenin bitiş kelimesine dokun.</div>';return}
+  const c=ls('rai3',{})['m|'+baglam()+'|'+secili()];
+  if(c)yaz('m',c); else $('#pb').innerHTML='<div class="mini">Dokunmak istek göndermez. İstersen yukarıdaki butonlara bas ya da Gemini\'ye yaz.</div>';
 }
-function yaz(t){
-  const m=t.match(/^Anlam:\s*(.+)$/m), n=t.match(/^Not:\s*([\s\S]+)$/m);
-  $('#pb').innerHTML=m?`<div class="am">${esc(m[1])}</div>${n?`<div>${esc(n[1].trim())}</div>`:''}`:esc(t);
-}
-function baglam(){
+function baglam(){ /* seçimin geçtiği cümle(ler) */
   const B=BL[SEL.b]; let a=SEL.s, z=SEL.e;
   while(a>0&&!B.end[a-1])a--;
   while(z<B.ws.length-1&&!B.end[z])z++;
-  if(z-a>50){a=Math.max(a,SEL.s-25);z=Math.min(z,SEL.e+25)}
-  return B.ws.slice(a,z+1).join(' ');
+  if(z-a>60){a=Math.max(a,SEL.s-30);z=Math.min(z,SEL.e+30)}
+  return rangeText(SEL.b,a,z);
 }
-async function acikla(){
-  if(SEL.b<0)return;
-  const my=++rq, sel=secili(), sent=baglam(), cache=ls('rai2',{}), ck=sent+'|'+sel;
-  if(cache[ck]){yaz(cache[ck]);return}
+const blokMetin=()=>rangeText(SEL.b,0,BL[SEL.b].ws.length-1).slice(0,2000); /* seçimin geçtiği tüm yorum / yazı */
+function yaz(kind,t,q){
+  const el=$('#pb');
+  if(kind==='m'){
+    const m=t.match(/^Anlam:\s*(.+)$/m), n=t.match(/^Not:\s*([\s\S]+)$/m);
+    el.innerHTML=m?`<div class="am">${esc(m[1])}</div>${n?`<div>${esc(n[1].trim())}</div>`:''}`:esc(t);
+  }else if(kind==='w'){
+    el.innerHTML=t.split('\n').map(l=>{
+      l=l.trim(); if(!l)return '';
+      const c=l.match(/^Çeviri:\s*(.+)$/i); if(c)return`<div class="tr">${esc(c[1])}</div>`;
+      const k=l.indexOf('=');
+      return k>0?`<div class="wl"><b>${esc(l.slice(0,k).trim())}</b> = ${esc(l.slice(k+1).trim())}</div>`:`<div class="wl">${esc(l)}</div>`;
+    }).join('');
+  }else el.innerHTML=`<div class="mini" style="margin:0 0 .4rem">❓ ${esc(q)}</div><div>${esc(t)}</div>`;
+}
+/* kind: m = anlamı · w = kelime kelime · q = kendi mesajım */
+async function sor(kind){
+  if(SEL.b<0)return toast('Önce bir şey seç');
+  const sel=secili(); if(!sel)return toast('Seçili metin boş');
+  const q=kind==='q'?($('#qi').value||'').trim():''; if(kind==='q'&&!q)return toast('Bir şey yaz');
+  const my=++rq, sent=baglam(), cache=ls('rai3',{}), ck=kind+'|'+sent+'|'+sel, title=DATA?.baslik||'';
+  if(kind!=='q'&&cache[ck]){yaz(kind,cache[ck]);return}
   $('#pb').textContent='⏳';
-  const prompt=`Reddit post title: "${DATA?.baslik||''}"
+  const n=sel.split(/\s+/).length; let prompt,max;
+  if(kind==='m'){
+    max=600;
+    prompt=`Reddit post title: "${title}"
 Sentence: "${sent}"
 Selected part: "${sel}"
 What does the selected part mean IN THIS SENTENCE? Answer in Turkish, plain text, exactly this format:
-Anlam: the Turkish meaning it has in this sentence (1-5 words, the translation that would fit in this sentence)
-Not: max 25 words in Turkish: if it is a phrasal verb, idiom, slang or abbreviation say so; if inflected, give the base form; if it has other common meanings that do NOT apply here, mention the main one briefly.
+Anlam: the Turkish meaning it has in this sentence (if the selected part is short: 1-5 words that would fit in the sentence; if it is a whole sentence or longer: a natural Turkish translation)
+Not: max 25 words in Turkish: if it is a phrasal verb, idiom, slang or abbreviation say so; if inflected, give the base form; if it has another common meaning that does NOT apply here, mention it briefly.
 Write in TURKISH.`;
+  }else if(kind==='w'){
+    max=Math.min(2500,500+45*n);
+    prompt=`Reddit post title: "${title}"
+Sentence: "${sent}"
+Selected part: "${sel}"
+Go through the selected part from start to end and give the Turkish meaning of EACH word as it is used in this context. One line per word, exactly "word = Turkish meaning". Do not skip any word. If several words form a phrasal verb, idiom or fixed expression, put them together on ONE line (e.g. "give up = vazgeçmek"). Last line, exactly: "Çeviri: natural Turkish translation of the whole selected part".
+Plain text, no markdown. Write in TURKISH.`;
+  }else{
+    max=900;
+    prompt=`Reddit post title: "${title}"
+Full text where the selected part is used (a comment or post): """${blokMetin()}"""
+Sentence: "${sent}"
+Selected part: "${sel}"
+The reader asks (possibly in Turkish): "${q}"
+Answer in Turkish, plain text, no markdown, max 90 words. Answer about the selected part, using the sentence and the full text above for context.`;
+  }
   try{
-    const r=await gem(prompt,300);
-    cache[ck]=r;const ks=Object.keys(cache);if(ks.length>300)delete cache[ks[0]];st('rai2',cache);
-    if(my===rq)yaz(r);
-  }catch(e){if(my===rq)$('#pb').innerHTML=`<span style="color:var(--rd)">Hata: ${esc(e.message)}</span><br><button class="go" style="margin-top:.5rem" onclick="acikla()">Tekrar dene</button>`}
+    const r=await gem(prompt,max);
+    if(kind!=='q'){cache[ck]=r;const ks=Object.keys(cache);if(ks.length>300)delete cache[ks[0]];st('rai3',cache)}
+    if(my===rq)yaz(kind,r,q);
+  }catch(e){if(my===rq)$('#pb').innerHTML=`<span style="color:var(--rd)">Hata: ${esc(e.message)}</span><br><button class="go" style="margin-top:.5rem" onclick="sor('${kind}')">Tekrar dene</button>`}
 }
 function sayS(){
   const t=secili(); if(!t||!window.speechSynthesis)return;
