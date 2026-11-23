@@ -155,9 +155,10 @@ async function gem(prompt,max){
 /* ── link → gönderi kimliği ── */
 let DATA=null, BL=[], WAIT=false; /* BL: her metin bloğunun kelime listesi */
 function parseLink(raw){
-  let u;try{u=new URL(raw.trim())}catch{return null}
-  let m=u.pathname.match(/\/comments\/([a-z0-9]+)/i);
-  if(!m&&u.hostname==='redd.it')m=u.pathname.match(/^\/([a-z0-9]+)/i);
+  /* Google yönlendirme linki, paylaşım linki, kodlanmış link: hepsinde içindeki /comments/ID kısmı bulunur */
+  let t=String(raw||'').trim();
+  for(let i=0;i<3;i++){try{const d=decodeURIComponent(t);if(d===t)break;t=d}catch{break}}
+  let m=t.match(/reddit\.com\/(?:r\/[^\/?#\s]+\/)?comments\/([a-z0-9]+)/i)||t.match(/comments\/([a-z0-9]+)/i)||t.match(/redd\.it\/([a-z0-9]+)/i);
   return m?m[1]:null;
 }
 const apiUrl=id=>`https://api.reddit.com/comments/${id}?limit=500&raw_json=1`;
