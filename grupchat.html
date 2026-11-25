@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English Group Chat Simulator</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:#0f1419;color:#e7e9ea;height:100vh;display:flex;flex-direction:column}
+header{padding:10px 14px;background:#161d26;border-bottom:1px solid #26313d;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input,select,textarea{background:#0f1419;color:#e7e9ea;border:1px solid #2f3b49;border-radius:8px;padding:8px;font-size:14px;font-family:inherit}
+button{background:#2a6df4;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
+button.g{background:#2a3644}button.r{background:#d9433f}button.y{background:#e0b44c;color:#14130f;font-weight:700}button:disabled{opacity:.5}
+#key{width:170px}#model{width:220px}#topic{flex:1;min-width:200px}
+#members{padding:6px 14px;font-size:12px;color:#8b98a5;background:#121820;display:flex;gap:12px;flex-wrap:wrap}
+#members span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:4px}
+#tabs{display:flex;gap:6px;padding:6px 14px;background:#121820;overflow-x:auto;border-bottom:1px solid #26313d}
+#tabs button{background:#1d2733;color:#c3ccd5;padding:6px 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+#tabs button.on{background:#2a6df4;color:#fff}
+#tabs .bd{background:#d9433f;color:#fff;border-radius:999px;padding:0 6px;margin-left:4px;font-size:11px}
+.view{display:none;flex-direction:column;gap:8px}.view.on{display:flex}
+.sys.lk{cursor:pointer;background:#2a3a1f;color:#cfe8b0}
+#chat{flex:1;overflow-y:auto;padding:14px}
+#chat.pad{padding-bottom:48vh}
+.m{display:flex;gap:8px;max-width:84%;align-items:flex-end;border-radius:12px}
+.m.me{align-self:flex-end;flex-direction:row-reverse}
+.m.flash{animation:fl 1.2s}@keyframes fl{0%,60%{background:#2a3644}100%{background:none}}
+.av{width:30px;height:30px;border-radius:50%;background:var(--c);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex:none}
+.b{background:#1d2733;padding:7px 11px;border-radius:14px;line-height:1.4;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.b.nb{background:none;padding:0}
+.me .b{background:#2a6df4}
+.n{font-size:11px;font-weight:700;color:var(--c);margin-bottom:2px}
+.q{border-left:3px solid var(--c);background:rgba(255,255,255,.07);padding:3px 8px;border-radius:6px;margin-bottom:5px;font-size:12px;cursor:pointer;color:#c3ccd5;white-space:normal}
+.q b{display:block;color:var(--c)}
+.me .q{border-color:#fff}
+img.pic{max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px}
+.st{font-size:64px;line-height:1.1}
+.act{display:flex;gap:2px;opacity:.5;margin-top:2px}.me .act{justify-content:flex-end}
+.act button{background:none;padding:0 5px;font-size:13px}
+.sys{align-self:center;font-size:12px;color:#8b98a5;background:#161d26;padding:4px 10px;border-radius:10px}
+#typing{height:20px;padding:0 16px;font-size:12px;color:#8b98a5;font-style:italic}
+#rb{display:none;padding:6px 14px;background:#1d2733;font-size:12px;color:#c3ccd5;justify-content:space-between;align-items:center;border-top:1px solid #26313d}
+#rb button{background:none;padding:0 6px}
+.bar{padding:10px 14px;background:#161d26;border-top:1px solid #26313d;display:flex;gap:8px;flex-wrap:wrap}
+#msg{flex:1;min-width:180px}
+label{font-size:13px;color:#8b98a5;display:flex;align-items:center;gap:4px}
+.vw{background:rgba(255,214,10,.28);box-shadow:inset 0 -2px 0 #ffd60a;border-radius:3px}
+.vwn{font-size:11px;color:#ffd60a;margin-right:6px;opacity:.9}
+#wg{max-width:210px}
+.w{border-radius:3px}.w.sel,.g.sel{background:#e0b44c;color:#14130f}.w.anc{outline:2px dashed #e0b44c}
+body.sm .w{cursor:pointer}
+#pn{position:fixed;left:0;right:0;bottom:0;z-index:50;display:none;justify-content:center}
+#pn.on{display:flex}
+#pi{width:100%;max-width:700px;background:#161d26;border:1px solid #2f3b49;border-bottom:0;border-radius:16px 16px 0 0;padding:12px;max-height:46vh;overflow-y:auto;box-shadow:0 -6px 24px rgba(0,0,0,.5)}
+.ph{display:flex;gap:8px;align-items:flex-start}
+#ps{flex:1;resize:none;font-size:17px;font-weight:700;color:#e0b44c;font-family:Georgia,serif}
+.ph button{width:36px;height:36px;padding:0;border-radius:50%}
+.acts{display:flex;gap:8px;margin-top:8px}.acts button{flex:1}
+.qrow{display:flex;gap:8px;margin-top:8px}.qrow input{flex:1}
+#pb{margin-top:10px;line-height:1.6;white-space:pre-wrap}
+#pb .am{font-weight:700;font-size:20px;color:#4cc38a;margin-bottom:4px}
+#pb .wl b{color:#4cc38a}#pb .tr{margin-top:8px;padding-top:8px;border-top:1px solid #2f3b49;color:#e0b44c;font-weight:700}
+.mini{font-size:12px;color:#8b98a5}
+</style>
+</head>
+<body>
+<header>
+  <input id="key" type="password" placeholder="Gemini API key">
+  <input id="model" value="gemini-3.5-flash-lite, gemini-3.8-flash" title="Models, comma separated. Next one is tried if one fails.">
+  <input id="topic" placeholder="Today's topic (e.g. planning a weekend trip)">
+  <select id="wg" title="Vocabulary group from your database"><option value="">📚 No vocabulary</option><option value="__load">📚 Load my words…</option></select>
+  <button id="start">▶ Start</button>
+  <button id="stop" class="r" disabled>■ Stop</button>
+  <button id="dl" class="g">⬇ TXT</button>
+  <button id="tg" class="g" title="When ON, tap words in the chat to select them. Double tap a word = sentence start, then tap the end word.">Select: Off</button>
+</header>
+<div id="members"></div>
+<div id="tabs"></div>
+<div id="chat"></div>
+<div id="typing"></div>
+<div id="rb"><span id="rbt"></span><button onclick="setReply(null)">✕</button></div>
+<div class="bar">
+  <select id="to"></select>
+  <input id="msg" placeholder="Write something in English…" disabled>
+  <button id="send" disabled>Send</button>
+  <label><input type="checkbox" id="long"> Long answers</label>
+  <button id="askall" class="g" disabled title="Ask everyone the question in the box">Ask all</button>
+  <button id="spark" class="g" disabled title="Make them start a new sub-conversation">Spark chat</button>
+</div>
+
+<div id="pn"><div id="pi">
+  <div class="ph"><textarea id="ps" rows="2" oninput="fit(this)"></textarea>
+    <button class="g" onclick="sayS()" title="Listen">🔊</button><button class="g" onclick="undo()" title="Restore">↩</button><button class="g" onclick="closeP()">✕</button></div>
+  <div class="acts"><button class="y" onclick="sor('m')">🤖 Meaning</button><button class="y" onclick="sor('w')">📝 Word by word</button></div>
+  <div class="qrow"><input id="qi" placeholder="Ask Gemini (Turkish ok)…" onkeydown="if(event.key==='Enter')sor('q')"><button onclick="sor('q')">➤</button></div>
+  <div id="pb"></div>
+</div></div>
+
+<script>
+const P=[
+ {n:"Jason",c:"#e5733a",d:"sarcastic joker, loves memes and teasing"},
+ {n:"Micheal",c:"#3aa6e5",d:"calm, smart, friendly; likes explaining English phrases and idioms"},
+ {n:"Eddie",c:"#c9423f",d:"hot-headed, opinionated, argues easily but warm underneath"},
+ {n:"Rossie",c:"#d94fa0",d:"flirty, playful, sweet, uses emojis"},
+ {n:"Ashlie",c:"#4fb36b",d:"peacemaker, caring, notices feelings, mediates fights"}
+];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const chat=$("chat"),typing=$("typing");
+let view="group";const typ={},unread={},dmEp={},VIEWS=["group",...["Jason","Micheal","Eddie","Rossie","Ashlie"]];let lastDM=0;
+VIEWS.forEach(v=>{const d=document.createElement("div");d.className="view"+(v==="group"?" on":"");d.id="v-"+v;chat.appendChild(d);unread[v]=0;dmEp[v]=0});
+function T(v,t){typ[v]=t||"";if(v===view)typing.textContent=typ[v]}
+function tabs(){$("tabs").innerHTML=VIEWS.map(v=>`<button class="${v===view?"on":""}" onclick="openView('${v}')">${v==="group"?"👥 Group":"💬 "+v}${unread[v]?`<span class="bd">${unread[v]}</span>`:""}</button>`).join("")}
+function openView(v){view=v;unread[v]=0;document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id==="v-"+v));
+  tabs();typing.textContent=typ[v]||"";$("to").style.display=v==="group"?"":"none";$("askall").style.display=$("spark").style.display=v==="group"?"":"none";
+  $("msg").placeholder=v==="group"?"Write something in English…":"Private message to "+v+"…";setReply(null);chat.scrollTop=chat.scrollHeight}
+function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.05;o.start();o.stop(a.currentTime+.12)}catch{}}
+function parseArr(txt){let arr=[];try{const m=txt.match(/\[[\s\S]*\]/)||txt.match(/\{[\s\S]*\}/);let v=JSON.parse(m?m[0]:txt);if(!Array.isArray(v))v=v.messages||Object.values(v).find(Array.isArray)||[v];arr=v}catch(e){}return arr}
+/* generic Gemini call with model fallback + retries. stale() -> true when the request is obsolete */
+async function api(prompt,maxTok,stale,vw){
+  const models=$("model").value.split(",").map(x=>x.trim()).filter(Boolean);
+  let j,r,lastErr="",dead=new Set();
+  for(let a=0;a<12;a++){
+    const live=models.filter(m=>!dead.has(m));
+    if(!live.length)throw new Error(lastErr||"No working model");
+    const mod=live[a%live.length];
+    const c=new AbortController();if(vw==="group")ctrl=c;const to=setTimeout(()=>c.abort(),15000);
+    T(vw,"Waiting for "+mod+"…");
+    try{
+      r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mod)}:generateContent`,{method:"POST",signal:c.signal,headers:{"Content-Type":"application/json","x-goog-api-key":$("key").value.trim()},
+        body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{temperature:1.05,maxOutputTokens:maxTok,...(/2\.5/.test(mod)?{thinkingConfig:{thinkingBudget:0}}:{})}})});
+      j=await r.json().catch(()=>({}));
+    }catch(e){if(stale())throw new DOMException("x","AbortError");r={ok:false,status:0};j={error:{message:e.name==="AbortError"?"timeout":e.message}};}
+    clearTimeout(to);
+    if(stale())throw new DOMException("x","AbortError");
+    if(!r.ok)sys("["+mod+"] FAIL "+r.status+" "+(j.error?.message||"").slice(0,200),vw);
+    if(r.ok)break;
+    lastErr=mod+": "+(j.error?.message||r.status);
+    if([400,401,403].includes(r.status)&&!/no longer|not found/i.test(lastErr))throw new Error(lastErr);
+    if(r.status===404||/no longer available|not found/i.test(lastErr)){dead.add(mod);continue;}
+    const wait=Math.min(2000*(a+1),15000);
+    T(vw,"Busy ("+mod+") — retry in "+Math.round(wait/1000)+"s");
+    await sleep(wait);
+    if(stale())throw new DOMException("x","AbortError");
+  }
+  if(!r||!r.ok)throw new Error(lastErr);
+  T(vw,"");
+  const cand=j.candidates?.[0];
+  return{txt:cand?.content?.parts?.filter(p=>!p.thought).map(p=>p.text||"").join("")||"",cand};
+}
+const col=n=>(P.find(p=>p.n===n)||{c:"#2a6df4"}).c;
+let fast=3,log=[],epoch=0,running=false,ctrl=null,RT=null;
+$("key").value=localStorage.getItem("gk")||"";
+$("model").value=localStorage.getItem("gm5")||"gemini-3.5-flash-lite, gemini-3.8-flash";
+$("members").innerHTML=P.map(p=>`<span style="--c:${p.c}">${p.n}</span>`).join("");
+$("to").innerHTML='<option value="">To: everyone</option>'+P.map(p=>`<option>${p.n}</option>`).join("");
+
+/* ═══ vocabulary from Firebase (collection "sozler") ═══ */
+let WORDS=null,WLOOK=new Map(),SAMPLE=[];const used={};
+const cl=k=>(k||"").replace(/\(.*?\)/g," ").replace(/\s+/g," ").trim();
+const grupOf=p=>p<2?"Bilmirem":p<5?"Orta":"Yaxsi";
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function wordRe(a){
+  a=a.toLowerCase().trim();const t=a.split(/\s+/).map(reEsc);let body;
+  if(t.length>1)body=t.join("\\s+");
+  else body=a.length>=5?reEsc(a.slice(0,-1))+"\\p{L}{0,3}":reEsc(a)+"(?:s|es|ed|ing|d)?";
+  return new RegExp("(?<!\\p{L})"+body+"(?!\\p{L})","giu");
+}
+function poolFor(v){return WORDS.filter(w=>!w.sehv&&(v==="all"||(v==="yaz"?w.yazilmali:v==="ozel"?w.ozel:v.startsWith("g:")?w.qrup===v.slice(2):grupOf(w.puan||0)===v)))}
+function buildOptions(){
+  const c=v=>poolFor(v).length,sel=$("wg");
+  const gs=[...new Set(WORDS.map(w=>w.qrup).filter(q=>q&&!["Bilmirem","Orta","Yaxsi","Default"].includes(q)))].sort();
+  sel.innerHTML=`<option value="">📚 No vocabulary</option><option value="Bilmirem">📚 Bilmirem – low score (${c("Bilmirem")})</option><option value="Orta">📚 Orta (${c("Orta")})</option><option value="Yaxsi">📚 Well known (${c("Yaxsi")})</option><option value="all">📚 All words (${c("all")})</option><option value="yaz">✍️ To write (${c("yaz")})</option><option value="ozel">⭐ Special (${c("ozel")})</option>`+gs.map(g=>`<option value="g:${esc(g)}">🗂️ ${esc(g)} (${c("g:"+g)})</option>`).join("");
+}
+async function loadWords(){
+  if(WORDS)return true;const sel=$("wg");sel.disabled=true;
+  try{
+    for(let i=0;i<20&&!window.fbWords;i++)await sleep(300);
+    if(!window.fbWords)throw new Error("Firebase did not load (internet?)");
+    WORDS=(await window.fbWords()).map(w=>({...w,alts:cl(w.kelime).split(/[,;\/]/).map(x=>x.trim()).filter(Boolean)})).filter(w=>w.alts.length&&w.karsiligi);
+    WLOOK=new Map();WORDS.forEach(w=>w.alts.forEach(a=>WLOOK.set(a.toLowerCase(),w)));buildOptions();sel.disabled=false;return true;
+  }catch(e){alert("Could not load words: "+e.message);WORDS=null;sel.innerHTML='<option value="">📚 No vocabulary</option><option value="__load">📚 Load my words…</option>';sel.disabled=false;return false}
+}
+function sample(n=8){
+  const v=$("wg").value;if(!WORDS||!v||v==="__load")return[];
+  let pool=poolFor(v).map(w=>({w,k:Math.max(1,10-(w.puan||0))/(1+2*(used[w.id]||0))}));const out=[];
+  while(out.length<n&&pool.length){const t=pool.reduce((a,b)=>a+b.k,0);let r=Math.random()*t,i=0;for(;i<pool.length-1;i++){r-=pool[i].k;if(r<=0)break}out.push(pool[i].w);pool.splice(i,1)}
+  return out;
+}
+function vocabBlock(){
+  const s=sample(8);if(!s.length)return"";SAMPLE=[...s,...SAMPLE].slice(0,24);
+  return `Vocabulary practice: Subhan is currently learning these English words/phrases (Turkish meaning in brackets, only so you understand them):
+${s.map(w=>`- ${w.alts[0]} (${w.karsiligi})`).join("\n")}
+Work them in NATURALLY while chatting: roughly every third message from the friends should use one of these words (any grammatical form), only where it genuinely fits what is being said. Don't force the conversation around them, never list or define them, never mention they are practice words. Add "vw":["word exactly as listed"] to every message that uses one.
+`;
+}
+function findMarks(text,vw){
+  const cand=new Map();SAMPLE.forEach(w=>cand.set(w.id,w));
+  (vw||[]).forEach(v=>{const w=WLOOK.get(String(v).toLowerCase().trim());if(w)cand.set(w.id,w)});
+  const marks=[],hit=[];
+  for(const w of cand.values())for(const a of w.alts){const re=wordRe(a),m=re.exec(text);if(m){marks.push([m.index,m.index+m[0].length,w]);hit.push(w);break}}
+  hit.forEach(w=>used[w.id]=(used[w.id]||0)+1);
+  return{marks,hit};
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const nm=w=>w==="You"?"Subhan":w;
+const snip=(t,n=60)=>{t=(t||"").replace(/\s+/g," ");return t.length>n?t.slice(0,n)+"…":t};
+
+/* ── words as tappable spans ── */
+const WRE=/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
+function wordsHtml(text,m,marks){
+  let out="",last=0,i=0,mt;WRE.lastIndex=0;
+  while((mt=WRE.exec(text))){
+    const g=text.slice(last,mt.index);
+    if(g)out+=i?`<span class="g" data-m="${m}" data-g="${i-1}">${esc(g)}</span>`:esc(g);
+    const mk=marks&&marks.find(k=>mt.index<k[1]&&mt.index+mt[0].length>k[0]);
+    out+=`<span class="w${mk?" vw":""}" data-m="${m}" data-i="${i}"${mk?` title="${esc(mk[2].alts[0]+" = "+(mk[2].karsiligi||""))}"`:""}>${esc(mt[0])}</span>`;i++;last=mt.index+mt[0].length;
+  }
+  return{html:out+esc(text.slice(last)),n:i};
+}
+
+/* ── messages ── */
+function add(who,text,x={}){
+  const id=log.length,me=who==="You",rep=(x.reply!=null&&log[x.reply])?x.reply:null;
+  const fm=(who!=="You"&&text&&WORDS)?findMarks(text,x.vw):{marks:[],hit:[]};
+  const wd=text?wordsHtml(text,id,fm.marks):{html:"",n:0};
+  log.push({id,chat:x.chat||"group",who,text,n:wd.n,vw:fm.hit.map(w=>w.alts[0]),reply:rep,imgq:x.img?x.imgq:null,st:x.sticker||null,t:new Date().toLocaleTimeString()});
+  const d=document.createElement("div");d.className="m"+(me?" me":"");d.id="m"+id;d.style.setProperty("--c",col(who));
+  let h="";
+  if(rep!=null){const r=log[rep];h+=`<div class="q" onclick="jump(${rep})"><b>${esc(nm(r.who))}</b>${esc(snip(r.text||(r.st?"sticker":"photo")))}</div>`}
+  if(x.img)h+=`<img class="pic" src="${esc(x.img)}" alt="">`;
+  if(x.sticker)h+=`<div class="st">${esc(x.sticker)}</div>`;
+  h+=wd.html;
+  const av=document.createElement("div");av.className="av";av.textContent=who[0];
+  const w=document.createElement("div");
+  if(!me)w.innerHTML=`<div class="n">${esc(who)}</div>`;
+  const b=document.createElement("div");b.className="b"+(!text&&!rep?" nb":"");b.innerHTML=h;w.appendChild(b);
+  const a=document.createElement("div");a.className="act";
+  a.innerHTML=fm.hit.map(w=>`<span class="vwn">📘 ${esc(w.alts[0])} = ${esc(w.karsiligi)}</span>`).join("")+`<button title="Reply" onclick="setReply(${id})">↩</button>`+(text?`<button title="Explain" onclick="explain(${id})">🔍</button>`:"");
+  w.appendChild(a);
+  if(!me)d.appendChild(av);d.appendChild(w);const cv=x.chat||"group";$("v-"+cv).appendChild(d);
+  if(cv===view)chat.scrollTop=chat.scrollHeight;else if(!me){unread[cv]++;tabs()}
+  return id;
+}
+function sys(t,v="group",open){const d=document.createElement("div");d.className="sys"+(open?" lk":"");d.textContent=t;if(open)d.onclick=()=>openView(open);$("v-"+v).appendChild(d);chat.scrollTop=chat.scrollHeight;}
+function jump(id){const e=$("m"+id);if(!e)return;e.scrollIntoView({block:"center",behavior:"smooth"});e.classList.remove("flash");void e.offsetWidth;e.classList.add("flash")}
+function setReply(id){RT=id;const r=$("rb");if(id==null){r.style.display="none";return}
+  const m=log[id];$("rbt").textContent="↩ Replying to "+nm(m.who)+": "+snip(m.text||"sticker",70);r.style.display="flex";$("msg").focus()}
+
+/* ── images from the internet by name (Wikipedia, then Wikimedia Commons) ── */
+async function jget(u){const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);try{return await(await fetch(u,{signal:c.signal})).json()}finally{clearTimeout(t)}}
+const loads=u=>new Promise(r=>{const i=new Image();const t=setTimeout(()=>r(false),7000);i.onload=()=>{clearTimeout(t);r(true)};i.onerror=()=>{clearTimeout(t);r(false)};i.src=u});
+async function findImg(q){
+  q=encodeURIComponent(q);
+  const tries=[
+    async()=>{const j=await jget(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=4&prop=pageimages&piprop=thumbnail&pithumbsize=500&format=json&origin=*`);
+      return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).map(p=>p.thumbnail?.source).find(Boolean)},
+    async()=>{const j=await jget(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${q}&gsrlimit=4&prop=imageinfo&iiprop=url&iiurlwidth=500&format=json&origin=*`);
+      return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).map(p=>p.imageinfo?.[0]?.thumburl).find(u=>u&&/\.(jpe?g|png|webp)/i.test(u))}
+  ];
+  for(const f of tries){try{const u=await f();if(u&&await loads(u))return u}catch{}}
+  return null;
+}
+
+const VIBES=["light banter and a joke","someone teases someone (friendly)","a small disagreement that heats up a bit","someone changes the subject slightly to something funny","a bit of playful flirting between two people","someone tries to calm things down","someone shares a short personal story","someone asks the others a question","everyone laughs / reacts to the last message","someone derails the chat and another pulls it back"];
+
+async function turn(my,opts={}){
+  const topic=$("topic").value.trim()||"anything casual";
+  const long=$("long").checked||opts.long;
+  const recent=log.filter(m=>m.chat==="group").slice(-30).map(m=>`#${m.id} ${nm(m.who)}${m.reply!=null?` (replying to #${m.reply})`:""}: ${m.text}${m.imgq?` [shared a photo of: ${m.imgq}]`:""}${m.st?` [sticker ${m.st}]`:""}`).join("\n");
+  const u=opts.userMsg;let dir="";
+  if(u){
+    const rm=u.reply!=null?log[u.reply]:null;
+    dir=`Subhan (the human) just wrote: "${u.text}"${u.to?` addressed to ${u.to}. ${u.to} MUST answer first.`:". Someone should answer naturally first, then others may react."}${rm?` It is a reply to #${rm.id} by ${nm(rm.who)}: "${snip(rm.text,100)}"${rm.who!=="You"?`, so ${rm.who} should answer first.`:"."}`:""} If Subhan's English has a mistake, one friend gently and jokingly corrects it, explaining the right usage with a short example.`;
+  }else if(opts.spark)dir="Start a fresh, fun sub-conversation among yourselves (not about the main topic necessarily).";
+  else dir="Continue chatting among yourselves. Current vibe: "+pick(VIBES)+". About 1 in 4 turns, one person directly asks Subhan a question or passes the ball to him by name (set \"to\":\"Subhan\").";
+  if(opts.askall)dir=`Subhan asked everyone: "${opts.askall}". Each of the 5 answers briefly in their own personality.`;
+  const prompt=`You simulate a lively WhatsApp-style group chat of 5 friends: ${P.map(p=>`${p.n} (${p.d})`).join("; ")}. The human is Subhan, an English learner practicing. Everyone in the group knows his name is Subhan and uses it naturally (often when talking to him or about him, not in every message; a nickname like "Sub" is ok). Topic: ${topic}.
+Rules: realistic casual texting, short messages (usually 3-14 words), lowercase ok, slang, occasional emojis/"lol"/"haha", natural reactions, banter, flirting, jokes, mild fights and make-ups. Use natural everyday English. Don't repeat yourselves. Don't act like assistants. Never write for Subhan.
+${long?"The human wants a longer, detailed explanation: the relevant person may write a longer message (up to ~120 words) but still in chat style.":"Keep every message short."}
+Optional fields per message: "reply_to": the #id of an older message it answers (only occasionally, about 1 in 4 messages, when someone is answering a specific earlier message or the chat is moving fast; most messages must have NO reply_to, never use it on two messages in a row); "img": a short search term for a real, well-known thing/place/animal/food/famous person to show a photo of (rare, about 1 in 8 messages, only when it fits naturally; just post it with a short reaction, don't describe it); "sticker": one emoji sent as a big sticker (sometimes, for reactions; text may be empty then).
+${vocabBlock()}
+Private DMs: occasionally (about 1 in 8 turns, never two turns in a row) a genuinely private matter comes up (a secret, gossip about another friend, a crush or flirting, an apology after a fight, asking Subhan for advice, a warning, jealousy, a personal problem). Then ONE friend sends Subhan a private DM INSTEAD of posting in the group: output that message with "dm":true. The DM text must naturally explain why they write privately (e.g. "didn't want to say this in the group, but..."). Don't mention the private matter in the group itself. Never use dm for ordinary banter.
+${dir}
+Output ONLY a JSON array of ${opts.askall?5:(fast>0?"2-3":"1-2")} objects: [{"speaker":"Name","text":"...","reply_to":12,"to":"optional name","img":"optional","sticker":"optional","dm":true,"vw":["optional"]}]. Speakers must be from: ${P.map(p=>p.n).join(", ")}.
+Conversation so far:
+${recent||"(empty — start the chat naturally about the topic)"}`;
+  const {txt,cand}=await api(prompt,long?6000:3000,()=>my!==epoch,"group");
+  let arr=parseArr(txt);
+  const norm=n=>P.find(p=>p.n.toLowerCase()===String(n||"").trim().toLowerCase());
+  arr=arr.map(x=>({...x,speaker:norm(x&&(x.speaker||x.name))?.n,text:x&&(x.text||x.message||""),sticker:x&&x.sticker?Array.from(String(x.sticker)).slice(0,2).join(""):"",dm:!!(x&&x.dm)}))
+    .filter(x=>x.speaker&&(x.text||x.sticker||x.img));
+  if(!arr.length)throw new Error("EMPTY finish="+(cand?.finishReason||"none")+" raw="+txt.slice(0,120));
+  return arr;
+}
+
+async function loop(my,opts){
+  running=true;
+  try{
+    while(my===epoch){
+      let arr;
+      for(let k=0;;k++){
+        try{arr=await turn(my,opts);break;}
+        catch(e){if(!/^EMPTY/.test(e.message)||k>=2)throw e;await sleep(1500);}
+      }
+      opts={};
+      for(const m of arr){
+        if(my!==epoch)return;
+        let isDM=!!m.dm;
+        if(isDM){const dl=log.filter(x=>x.chat===m.speaker);const last=dl[dl.length-1];
+          if(Date.now()-lastDM<120000||(last&&last.who!=="You")||!m.text)continue;}
+        const quick=fast>0&&!isDM;
+        await sleep(quick?1200+Math.random()*1800:10000+Math.random()*10000);
+        if(my!==epoch)return;
+        T("group",isDM?"":m.speaker+" is typing…");T(m.speaker,isDM?m.speaker+" is typing…":"");
+        const ip=!isDM&&m.img?findImg(String(m.img).slice(0,60)):Promise.resolve(null);
+        await sleep(1800+Math.min((m.text||"").length||12,160)*85+Math.random()*1800);
+        const url=await ip;
+        if(my!==epoch)return;
+        T("group","");T(m.speaker,"");
+        if(isDM){
+          add(m.speaker,m.text,{chat:m.speaker,vw:m.vw});lastDM=Date.now();beep();
+          sys("💬 "+m.speaker+" sent you a private message — tap to open","group",m.speaker);
+          continue;}
+        let rt=Number.isInteger(+m.reply_to)&&log[+m.reply_to]&&log[+m.reply_to].chat==="group"?+m.reply_to:null;
+        if(rt!=null){const gl=log.filter(x=>x.chat==="group"),last=gl[gl.length-1],toYou=log[rt].who==="You";
+          if((last&&last.reply!=null)||(rt===last.id&&!toYou&&Math.random()<.7)||(toYou&&Math.random()<.4))rt=null;}
+        if(!m.text&&!m.sticker&&!url)continue;
+        add(m.speaker,m.text||"",{reply:rt,img:url,imgq:m.img,sticker:m.sticker,vw:m.vw});
+        if(fast>0)fast--;
+      }
+    }
+  }catch(e){
+    if(e.name==="AbortError"||my!==epoch)return;
+    T("group","");sys("Error: "+e.message+" — chat paused. Press Start to resume.");stopUI();
+  }
+}
+
+function startUI(){$("start").disabled=true;$("stop").disabled=false;["msg","send","askall","spark"].forEach(i=>$(i).disabled=false);}
+function stopUI(){epoch++;ctrl&&ctrl.abort();running=false;VIEWS.forEach(v=>{dmEp[v]++;T(v,"")});$("start").disabled=false;$("stop").disabled=true;["msg","send","askall","spark"].forEach(i=>$(i).disabled=true);}
+tabs();
+$("wg").onchange=async()=>{
+  let v=$("wg").value;
+  if(v==="__load"){const ok=await loadWords();v=ok?(localStorage.getItem("wgv")||"Bilmirem"):"";$("wg").value=v;if($("wg").value!==v)$("wg").value="Bilmirem"}
+  localStorage.setItem("wgv",$("wg").value);SAMPLE=[];
+};
+{const sv=localStorage.getItem("wgv");if(sv)loadWords().then(ok=>{if(ok){$("wg").value=sv;if($("wg").value!==sv)$("wg").value=""}})}
+$("start").onclick=async()=>{
+  if(!$("key").value.trim())return alert("Enter your Gemini API key.");
+  if($("wg").value&&$("wg").value!=="__load"&&!WORDS&&!await loadWords())return;
+  localStorage.setItem("gk",$("key").value.trim());localStorage.setItem("gm5",$("model").value.trim());
+  sys("Topic: "+($("topic").value||"anything"));fast=3;startUI();
+  ctrl&&ctrl.abort();loop(++epoch,{});
+};
+$("stop").onclick=()=>{stopUI();sys("Chat stopped. You can download the TXT.");};
+function interrupt(opts){ctrl&&ctrl.abort();T("group","");loop(++epoch,opts);}
+async function dmReply(name){
+  const my=++dmEp[name],stale=()=>dmEp[name]!==my,p=P.find(x=>x.n===name);
+  const hist=log.filter(m=>m.chat===name).slice(-20).map(m=>`${nm(m.who)}: ${m.text}`).join("\n");
+  const grp=log.filter(m=>m.chat==="group").slice(-12).map(m=>`${nm(m.who)}: ${m.text}`).join("\n");
+  const long=$("long").checked||/detail|long|explain|elaborate/i.test((log.filter(m=>m.chat===name).pop()||{}).text||"");
+  const prompt=`You are ${name} (${p.d}) in a PRIVATE one-to-one chat with Subhan, an English learner who practices English by texting with friends. The others in the group (${P.filter(x=>x.n!==name).map(x=>x.n).join(", ")}) cannot see this private chat. Group topic: ${$("topic").value||"anything"}.
+Recent group chat (for context):
+${grp||"(nothing yet)"}
+Private chat so far:
+${hist}
+${vocabBlock()}Write ${name}'s next 1-3 text messages to Subhan: realistic casual texting, in character, continue the private matter naturally (secret, advice, flirting, gossip, apology...), react to what Subhan just said. Short messages${long?" (but Subhan wants a longer explanation, so up to ~120 words is fine)":""}. If Subhan made an English mistake, sometimes correct it kindly and playfully with a short example.
+Output ONLY a JSON array: [{"text":"...","vw":["optional word from the vocabulary list"]}]`;
+  try{
+    const {txt}=await api(prompt,long?4000:2500,stale,name);
+    const arr=parseArr(txt).map(x=>x&&{text:x.text||x.message,vw:x.vw}).filter(x=>x&&x.text);
+    if(!arr.length)throw new Error("Empty answer");
+    for(const t of arr){
+      if(stale())return;
+      T(name,name+" is typing…");
+      await sleep(1500+Math.min(t.text.length,160)*70+Math.random()*1200);
+      if(stale())return;
+      T(name,"");add(name,t.text,{chat:name,vw:t.vw});
+      await sleep(500+Math.random()*700);
+    }
+  }catch(e){if(e.name==="AbortError"||stale())return;T(name,"");sys("Error: "+e.message,name)}
+}
+function sendUser(){
+  const t=$("msg").value.trim();if(!t)return;
+  if(view!=="group"){const rp=RT;$("msg").value="";setReply(null);add("You",t,{chat:view,reply:rp});dmReply(view);return}
+  const to=$("to").value,rp=RT;$("msg").value="";setReply(null);
+  add("You",(to?"@"+to+" ":"")+t,{reply:rp});
+  fast=2+Math.floor(Math.random()*2);
+  interrupt({userMsg:{text:t,to,reply:rp},long:/detail|long|explain|elaborate/i.test(t)});
+}
+$("send").onclick=sendUser;
+$("msg").onkeydown=e=>{if(e.key==="Enter")sendUser();};
+$("askall").onclick=()=>{
+  if(view!=="group")return;const t=$("msg").value.trim();if(!t)return alert("Type your question in the box first.");
+  $("msg").value="";add("You","(to everyone) "+t);fast=5;interrupt({askall:t,long:$("long").checked});
+};
+$("spark").onclick=()=>{if(view!=="group")return;fast=3;interrupt({spark:true});};
+$("dl").onclick=()=>{
+  const body=`Topic: ${$("topic").value}\n\n`+log.map(m=>`[${m.t}] ${m.chat!=="group"?"[DM "+m.chat+"] ":""}${nm(m.who)}${m.reply!=null?` (↩ ${nm(log[m.reply].who)}: "${snip(log[m.reply].text,40)}")`:""}: ${m.text}${m.imgq?` [photo: ${m.imgq}]`:""}${m.st?` ${m.st}`:""}${m.vw&&m.vw.length?` [📘 ${m.vw.join(", ")}]`:""}`).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([body],{type:"text/plain"}));
+  a.download="chat-"+Date.now()+".txt";a.click();
+};
+
+/* ═══ Explain panel (meaning / word by word / ask) ═══ */
+let MOD=false,SEL={m:-1,s:0,e:0},RM=false,ANC=null,LAST={m:-1,i:-1,t:0},ORIG="",rq=0;const CACHE={};
+const secili=()=>($("ps").value||"").trim()||ORIG;
+function rangeText(m,a,z){let t="";document.querySelectorAll(`#m${m} .w,#m${m} .g`).forEach(x=>{
+  if(x.classList.contains("w")){const i=+x.dataset.i;if(i>=a&&i<=z)t+=x.textContent}
+  else{const i=+x.dataset.g;if(i>=a&&i<z)t+=x.textContent}});return t.replace(/\s+/g," ").trim()}
+$("tg").onclick=()=>{MOD=!MOD;$("tg").className=MOD?"y":"g";$("tg").textContent="Select: "+(MOD?"On":"Off");document.body.classList.toggle("sm",MOD);if(!MOD)closeP();
+  else sys("Select is ON: tap a word. Double tap a word = sentence start, then tap the end word.")};
+chat.addEventListener("click",e=>{
+  if(!MOD)return;const w=e.target.closest(".w");if(!w)return;
+  const m=+w.dataset.m,i=+w.dataset.i,now=Date.now();
+  const dbl=LAST.m===m&&LAST.i===i&&now-LAST.t<450;LAST={m,i,t:now};
+  if(dbl){ANC={m,i};RM=true;SEL={m,s:i,e:i}}
+  else if(RM&&ANC&&ANC.m===m){SEL={m,s:Math.min(ANC.i,i),e:Math.max(ANC.i,i)};RM=false;ANC=null}
+  else{RM=false;ANC=null;SEL={m,s:i,e:i}}
+  paint();panel();
+  $("pb").innerHTML=RM?'<div class="mini">📍 Start selected. Now tap the end word.</div>':'<div class="mini">Pick a button below, or ask Gemini.</div>';
+});
+function paint(){
+  document.querySelectorAll(".sel,.anc").forEach(x=>x.classList.remove("sel","anc"));
+  if(SEL.m<0)return;
+  document.querySelectorAll(`#m${SEL.m} .w`).forEach(x=>{const i=+x.dataset.i;if(i>=SEL.s&&i<=SEL.e)x.classList.add("sel")});
+  document.querySelectorAll(`#m${SEL.m} .g`).forEach(x=>{const i=+x.dataset.g;if(i>=SEL.s&&i<SEL.e)x.classList.add("sel")});
+  if(RM&&ANC)document.querySelector(`#m${ANC.m} .w[data-i="${ANC.i}"]`)?.classList.add("anc");
+}
+function fit(t){t.style.height="auto";t.style.height=Math.min(t.scrollHeight,110)+"px"}
+function undo(){$("ps").value=ORIG;fit($("ps"))}
+function panel(){ORIG=rangeText(SEL.m,SEL.s,SEL.e);$("ps").value=ORIG;fit($("ps"));$("pn").classList.add("on");chat.classList.add("pad")}
+function closeP(){rq++;SEL={m:-1,s:0,e:0};RM=false;ANC=null;LAST={m:-1,i:-1,t:0};ORIG="";paint();$("pn").classList.remove("on");chat.classList.remove("pad")}
+function explain(id){const m=log[id];if(!m||!m.n)return;SEL={m:id,s:0,e:m.n-1};RM=false;paint();panel();$("pb").textContent="";sor("m")}
+function sayS(){const t=secili();if(!t||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.9;speechSynthesis.speak(u)}
+
+async function gem(prompt,max){
+  const key=$("key").value.trim();if(!key)throw new Error("Enter your API key at the top.");
+  const models=$("model").value.split(",").map(x=>x.trim()).filter(Boolean);let err;
+  for(const mod of models){
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),25000);
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mod)}:generateContent`,{method:"POST",signal:c.signal,
+        headers:{"Content-Type":"application/json","x-goog-api-key":key},
+        body:JSON.stringify({systemInstruction:{parts:[{text:"Sen bir dil öğretmenisin. Cevabın TAMAMI Türkçe olmalı (sadece İngilizce kelime ve örnekler orijinal dilde kalır). Düz metin yaz, markdown kullanma."}]},
+          contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0,maxOutputTokens:max}})});
+      const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);
+      const tx=(j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("").trim();
+      if(!tx)throw new Error("Empty answer");return tx;
+    }catch(e){err=e}finally{clearTimeout(t)}
+  }
+  throw err;
+}
+function yaz(kind,t,q){
+  const el=$("pb");
+  if(kind==="m"){const m=t.match(/^Anlam:\s*(.+)$/m),n=t.match(/^Not:\s*([\s\S]+)$/m);
+    el.innerHTML=m?`<div class="am">${esc(m[1])}</div>${n?`<div>${esc(n[1].trim())}</div>`:""}`:esc(t)}
+  else if(kind==="w"){el.innerHTML=t.split("\n").map(l=>{l=l.trim();if(!l)return"";
+    const c=l.match(/^Çeviri:\s*(.+)$/i);if(c)return`<div class="tr">${esc(c[1])}</div>`;
+    const k=l.indexOf("=");if(k>0)return`<div class="wl"><b>${esc(l.slice(0,k).trim())}</b> = ${esc(l.slice(k+1).trim())}</div>`;
+    return`<div class="wl">${esc(l)}</div>`}).join("")}
+  else el.innerHTML=`<div class="mini">❓ ${esc(q)}</div><div>${esc(t)}</div>`;
+}
+async function sor(kind){
+  if(SEL.m<0)return;const sel=secili();if(!sel)return;
+  const q=kind==="q"?($("qi").value||"").trim():"";if(kind==="q"&&!q)return;
+  const my=++rq,sent=log[SEL.m].text,ck=kind+"|"+sent+"|"+sel;
+  if(kind!=="q"&&CACHE[ck]){yaz(kind,CACHE[ck]);return}
+  $("pb").textContent="⏳";const n=sel.split(/\s+/).length;let prompt,max;
+  if(kind==="m"){max=1200;prompt=`Group chat message (casual texting): "${sent}"
+Selected part: "${sel}"
+What does the selected part mean IN THIS MESSAGE? Answer in Turkish, plain text, exactly this format:
+Anlam: the Turkish meaning it has here (short part: 1-5 words; whole sentence or longer: a natural Turkish translation)
+Not: max 25 words in Turkish: if it is slang, an idiom, a phrasal verb, an abbreviation or an informal texting form, say so and give the standard form; if inflected, give the base form; mention briefly another common meaning that does NOT apply here. If the sentence has an English mistake, say the correct version.
+Write in TURKISH.`}
+  else if(kind==="w"){max=Math.min(3000,900+45*n);prompt=`Group chat message: "${sent}"
+Selected part: "${sel}"
+Go through the selected part from start to end and give the Turkish meaning of EACH word as used here. One line per word, exactly "word = Turkish meaning". Do not skip any word. If several words form a phrasal verb, idiom or fixed expression, put them on ONE line (e.g. "give up = vazgeçmek"). Last line, exactly: "Çeviri: natural Turkish translation of the whole selected part".
+Plain text, no markdown. Write in TURKISH.`}
+  else{max=1500;prompt=`Group chat message: "${sent}"
+Selected part: "${sel}"
+The learner asks (possibly in Turkish): "${q}"
+Answer in Turkish, plain text, no markdown, max 90 words, using the message as context.`}
+  try{const r=await gem(prompt,max);if(kind!=="q")CACHE[ck]=r;if(my===rq)yaz(kind,r,q)}
+  catch(e){if(my===rq)$("pb").innerHTML=`<span style="color:#ee6055">Error: ${esc(e.message)}</span> <button onclick="sor('${kind}')">Retry</button>`}
+}
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+const db=getFirestore(initializeApp({apiKey:"AIzaSyCo8L-ziEftkkDz8tDm0X0nKdUME4bKQNM",authDomain:"sozler-fc7c0.firebaseapp.com",projectId:"sozler-fc7c0",storageBucket:"sozler-fc7c0.firebasestorage.app",messagingSenderId:"234991221431",appId:"1:234991221431:web:da04cfca423a00704cab32"}));
+window.fbWords=async()=>(await getDocs(collection(db,"sozler"))).docs.map(d=>({id:d.id,...d.data()}));
+</script>
+</body>
+</html>
