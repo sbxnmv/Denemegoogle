@@ -85,6 +85,7 @@ select{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);bord
     <button onclick="openAdd()" aria-label="Kelime ekle">➕</button>
     <button onclick="openSettings()" aria-label="Ayarlar">⚙️</button>
     <button onclick="location.href='cevir.html'" aria-label="Reddit Oku" title="Reddit Oku">📰</button>
+    <button onclick="location.href='grupchat.html'" aria-label="Grup Chat" title="Grup Chat">💬</button>
   </div>
   <div class="stats" id="stats">Firebase'e bağlanıyor…</div>
   <div id="main"><div class="card empty">Yükleniyor…</div></div>
@@ -546,6 +547,7 @@ function openSettings(){
     <div class="opt"><span>Excel'den toplu yükle</span><button onclick="openXls()">📥 Yükle</button></div>
     <div class="opt"><span>🎧 Yolda dinle modu</span><button onclick="startListen()">▶ Başlat</button></div>
     <div class="opt"><span>📰 Reddit Oku</span><button onclick="location.href='cevir.html'">Aç</button></div>
+    <div class="opt"><span>💬 Grup Chat</span><button onclick="location.href='grupchat.html'">Aç</button></div>
     <div class="opt"><span>AI anahtarı (Gemini)</span><button onclick="openKey()">🔑</button></div>
     <div class="opt"><span>Panodan çevir</span><button onclick="clipTr()">📋 Çevir</button></div>`);
 }
